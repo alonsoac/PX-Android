@@ -5,7 +5,6 @@
     android:layout_height="match_parent"
     tools:context=".fragEnlaces">
 
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -27,39 +26,54 @@
             android:id="@+id/enlacePROMEDIO"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Promedio/Estadísticas"
-            />
+            android:text="Promedio/Estadísticas" />
+
         <Button
             android:id="@+id/enlaceMENSAJES"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Mensajes"
-            />
+            android:text="Mensajes" />
+
         <Button
             android:id="@+id/enlaceSEÑALES"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Señales"
-            />
+            android:text="Señales" />
+
         <Button
             android:id="@+id/enlaceHAS"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Activar HAS"
-            />
+            android:text="Activar HAS" />
+
         <Button
             android:id="@+id/enlaceADDIP"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Agregar por IP"
-            />
-        <EditText
-            android:id="@+id/editTextMensajes"
+            android:text="Agregar por IP" />
+
+        <FrameLayout
+            android:id="@+id/messagesSignalsContainer"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="start|top"
-            android:inputType="none"
-            android:textSize="14sp" />
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <EditText
+                android:id="@+id/editTextMensajes"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="start|top"
+                android:inputType="none"
+                android:textSize="14sp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/signalsChartView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone"
+                tools:listitem="@android:layout/simple_list_item_1" />
+
+        </FrameLayout>
 
     </LinearLayout>
 
