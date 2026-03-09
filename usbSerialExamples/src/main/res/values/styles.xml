@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+    <!-- ypo creo que esto no se usa, ver themes.xml -->
+    <style name="spinnerTextBlack" parent="@style/Widget.AppCompat.TextView.SpinnerItem">
+        <item name="android:textColor">@color/black</item>
+    </style>
+
+
+</resources>

@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".SensorActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        tools:layout_editor_absoluteX="138dp"
+        tools:layout_editor_absoluteY="222dp">
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="Sensores"
+            android:textAlignment="center"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <TableLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/txtAcc1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Acc Original" />
+
+                <TextView
+                    android:id="@+id/txtAcc1Val"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="0" />
+                <TextView
+                    android:id="@+id/txtAcc2Val"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="0" />
+                <TextView
+                    android:id="@+id/txtAcc3Val"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="0" />
+            </TableRow>
+
+
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/txtMag1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Mag" />
+
+                <TextView
+                    android:id="@+id/txtMag1Val"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="0" />
+                <TextView
+                    android:id="@+id/txtMag2Val"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="0" />
+                <TextView
+                    android:id="@+id/txtMag3Val"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="0" />
+            </TableRow>
+
+
+
+
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/txtOri1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Yaw/Pit/Rol Org" />
+
+                <TextView
+                    android:id="@+id/txtOri1Val"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="0" />
+                <TextView
+                    android:id="@+id/txtOri2Val"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="0" />
+                <TextView
+                    android:id="@+id/txtOri3Val"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="0" />
+            </TableRow>
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/txtOri1adj"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="YawN/Pit/Rol Adj" />
+
+                <TextView
+                    android:id="@+id/txtYawNormVal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="0" />
+                <TextView
+                    android:id="@+id/txtOri2AdjVal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="0" />
+                <TextView
+                    android:id="@+id/txtOri3AdjVal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="0" />
+            </TableRow>
+
+
+
+
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/txtRumb"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Rumbo Real" />
+
+                <TextView
+                    android:id="@+id/txtRumbVal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="0" />
+            </TableRow>
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/txtIncl"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Inclinación" />
+
+                <TextView
+                    android:id="@+id/txtInclVal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="0" />
+            </TableRow>
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/txtSteady"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Steady" />
+
+                <TextView
+                    android:id="@+id/txtSteadyVal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="" />
+                <TextView
+                    android:id="@+id/txtnorrol"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="NoRoll" />
+
+                <TextView
+                    android:id="@+id/txtNoRollVal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="" />
+            </TableRow>
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/txtPitchLevel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Pitch nivel" />
+
+                <TextView
+                    android:id="@+id/txtPitchLevelVal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="0" />
+            </TableRow>
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/txtRollLevel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Roll nivel" />
+
+                <TextView
+                    android:id="@+id/txtRollLevelVal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="0" />
+            </TableRow>
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/txtaccLevel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Accel nivel" />
+
+                <TextView
+                    android:id="@+id/txtAccLevelVal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="0" />
+            </TableRow>
+        </TableLayout>
+
+        <Button
+            android:id="@+id/btnNivelar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Nivelar" />
+        <Button
+            android:id="@+id/btnMedir"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Medir" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/chkUseLevel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Usar nivel guardado" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/txtAlt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:labelFor="@id/editAltura"
+                android:text="Altura a centro de antena (metros)" />
+
+            <EditText
+                android:id="@+id/editAltura"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ems="10"
+                android:autofillHints="altbaston"
+                android:importantForAutofill="no"
+                android:inputType="numberDecimal" />
+        </LinearLayout>
+
+
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

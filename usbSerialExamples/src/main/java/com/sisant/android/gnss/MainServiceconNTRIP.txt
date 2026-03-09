@@ -1,0 +1,1047 @@
+package com.sisant.android.gnss;
+
+import android.app.Service;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.hardware.usb.UsbManager;
+import android.location.Location;
+import android.os.Bundle;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
+import android.preference.PreferenceManager;
+import android.util.Base64;
+import android.util.Log;
+import android.widget.Toast;
+
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.net.SocketTimeoutException;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Timer;
+import java.util.TimerTask;
+
+
+public class MainService extends Service {
+	//private static final String NTAG = "NTRIPThread";
+	//private static final String BTAG = "BTThread";
+
+	Thread nThread;
+	Socket nsocket; // Network Socket
+	InputStream nis = null; // Network Input Stream
+	OutputStream nos = null; // Network Output Stream
+
+
+
+
+    private int mDeviceState;
+    private int mCorrectionState;
+
+    public static final int STATE_NONE = 0;       // we're doing nothing
+    public static final int STATE_LISTEN = 1;     // now listening for incoming connections
+    public static final int STATE_CONNECTING = 2; // now initiating an outgoing connection
+    public static final int STATE_CONNECTED = 3;  // now connected to a remote device
+    public static final int STATE_NO_CORRECTIONS = 0;  // now connected to a remote device
+    public static final int STATE_DEVICE_CORRECTIONS = 1;  // now connected to a remote device
+    public static final int STATE_NTRIP_CORRECTIONS = 2;  // now connected to a remote device
+
+
+	private static boolean isRunning = false;
+	private Timer timer = new Timer();
+	private String logmsgs = "";
+	private String lognmea = "";
+	private int DisplayMsgType = 0;
+
+	ArrayList<Messenger> mClients = new ArrayList<Messenger>(); // Keeps track of all current registered clients.
+	int mValue = 0; // Holds last value set by a client.
+	static final int MSG_THREAD_SUICIDE = 0;
+	static final int MSG_REGISTER_CLIENT = 1;
+	static final int MSG_UNREGISTER_CLIENT = 2;
+	static final int MSG_UPDATE_STATUS = 3;
+	static final int MSG_UPDATE_BYTESIN = 4;
+	static final int MSG_SHOW_PROGRESSBAR = 5;
+	static final int MSG_UPDATE_LOG_APPEND = 6;
+	static final int MSG_UPDATE_LOG_FULL = 7;
+	static final int MSG_TOGGLE_LOG_TYPE = 8;
+	static final int MSG_ADD_NOTE_TO_NMEA = 9;
+	static final int MSG_RELOAD_PREFERENCES = 10;
+	static final int MSG_TIMER_TICK = 100;
+	static final int MSG_NETWORK_GOT_DATA = 101;
+	static final int MSG_NETWORK_TIMEOUT = 198;
+	static final int MSG_NETWORK_FINISHED = 199;
+	static final int MSG_BT_LOG_MESSAGE = 200;
+	static final int MSG_BT_GOT_DATA = 201;
+	static final int MSG_DEVICE_CONNECTED = 250;
+	static final int MSG_DEVICE_DISCONNECTED = 251;
+	static final int MSG_NTRIP_CONNECTED = 252;
+	static final int MSG_NTRIP_DISCONNECTED = 253;
+	static final int MSG_DEVICEIO_NEWDATA = 254;
+	static final int MSG_BT_FINISHED = 299;
+	static final int MSG_UPDATE_POSITION = 300;
+	static final int MSG_DEV_CORRECTIONS_OK = 301;
+	static final int MSG_NO_DEV_CORRECTIONS = 302;
+
+	final Messenger mMessenger = new Messenger(new IncomingHandler()); //Target we publish for clients to send messages to IncomingHandler.
+
+	//private Boolean NTRIPShouldBeConnected = false;
+	private String NetworkProtocol = "none";
+	private String SERVERIP = "";
+	private int SERVERPORT = 10000;
+	private String USERNAME = "";
+	private String PASSWORD = "";
+	private String MOUNTPOINT = "";
+	private Boolean NetworkTestingMode = false;
+	private Boolean NetworkIsConnected = false;
+	private int NetworkReceivedByteCount = 0;
+	private int NetworkReConnectInTicks = 2;
+	private int NetworkConnectionAttempts = 0;
+	private int NetworkDataMode = 0;
+	private String NTRIPResponse = "";
+	private String NMEA = "";
+
+	private GNSSDeviceIO.DeviceInfo currentDevice = null;
+
+	private String MACAddress = "00:00:00:00:00:00";
+	private Boolean UseHTCConnectionWorkaround = false;
+	private String AutoConfigReceiver = "none";
+	private int SaveDataStreamToFileType = 0;
+	private String NMEADataToSave = "";
+	private byte[] BinaryDataToSave = new byte[4096];
+	private int BinaryDataToSaveIndex = 0;
+	private Boolean UseManualLocation = false;
+	private Double ManualLat = 41.0;
+	private Double ManualLon = -91.0;
+
+	private boolean completeline;
+	private String MostRecentGGA = ""; //"$GPGGA,154223,4000,N,08312,W,4,10,1,200,M,1,M,8,0*7F"; // $GPGGA,213711.00,4158.8440010,N,09147.4414792,W,9,04,4.9,266.536,M,-32.00,M,03,0138*6C";
+
+	private int FixType = 10;
+	private int SatsTracked = 0;
+	private String HDOP = "";
+	private String CorrectionAge = "?";
+	private float Elevation = 0;
+	private float Speed = 0;
+	private float Heading = 0;
+	private int TicksSinceLastStatusSent = 0;
+	private int TicksSinceLastDeviceCheck = 0;
+	private int outInfo1 = 1;
+	private int outInfo2 = 4;
+
+	@Override
+	public IBinder onBind(Intent intent) {
+		return mMessenger.getBinder();
+	}
+	class IncomingHandler extends Handler { // Handler of incoming messages from clients.
+		@Override
+		public void handleMessage(Message msg) {
+			switch (msg.what) {
+				case MSG_DEV_CORRECTIONS_OK: //el device tiene sus propias correcciones , parar el NTRIP
+					setCorrectionState(STATE_DEVICE_CORRECTIONS);
+					break;
+				case MSG_NO_DEV_CORRECTIONS: //el device no tiene sus propias correcciones , enviarle NTRIP
+					setCorrectionState(STATE_NO_CORRECTIONS);
+					TerminateNTRIPThread(true);
+					break;
+				case MSG_DEVICEIO_NEWDATA:
+					//if(msg.getData()==null) Log.e("sisant","msg MSG_DEVICEIO_NEWDATA getdata es null");
+					//else Log.e("sisant",new String(msg.getData().getString("data")));
+				break;
+				case MSG_UPDATE_POSITION:
+					Location loc = msg.getData().getParcelable("location");
+					if(loc==null) Log.e("sisant","no hay posición");
+					else {
+						Log.e("sisant",GNSSDeviceIO.parser.position.toString());
+
+					}
+					sendMsgToClients(MSG_UPDATE_POSITION,msg.getData(),0,0);
+					break;
+			case MSG_REGISTER_CLIENT:
+				mClients.add(msg.replyTo);
+				break;
+			case MSG_UNREGISTER_CLIENT:
+				mClients.remove(msg.replyTo);
+				break;
+			case MSG_UPDATE_STATUS:
+				sendStatusMessageToUI(); // Client requested a status update
+				break;
+			case MSG_RELOAD_PREFERENCES:
+				LoadPreferences(true); // Client requested that the service reload the shared preferences
+				break;
+			case MSG_UPDATE_LOG_FULL:
+				sendAllLogMessagesToUI(); // Client requested all of the log messages.
+				if (!isRunning) {
+					InformActivityOfThreadSuicide();
+				}
+				if (NetworkReceivedByteCount > 0) {
+					SendByteCountProgressBarVisibility(1);
+					SendByteCountToActivity();
+				}
+				break;
+			case MSG_TOGGLE_LOG_TYPE:
+				if (DisplayMsgType == 0) {
+					SetDisplayMsgType(1);
+				} else {
+					SetDisplayMsgType(0);
+				}
+				break;
+			case MSG_ADD_NOTE_TO_NMEA:
+				Bundle b1 = msg.getData();
+				//SaveNMEALineToFile("#" + b1.getString("note"));
+				break;
+			default:
+				super.handleMessage(msg);
+			}
+		}
+	}
+
+	private void sendMsgToClients(int msgType, Bundle b, int arg1, int arg2) {
+		for (int i = mClients.size() - 1; i >= 0; i--) {
+			try {
+				Message msg=Message.obtain(null, msgType, arg1, arg2);
+				if(b!=null) msg.setData(b);
+				mClients.get(i).send(msg);
+			} catch (RemoteException e) {
+				// The client is dead. Remove it from the list; we are going
+				// through the list from back to front so this is safe to do
+				// inside the loop.
+				mClients.remove(i);
+			}
+		}
+	}
+
+	private void InformActivityOfThreadSuicide() {
+		for (int i = mClients.size() - 1; i >= 0; i--) {
+			try {
+				mClients.get(i).send(Message.obtain(null, MSG_THREAD_SUICIDE, 0, 0));
+				//Log.i("MyService", "Service informed Activity of Suicide. +");
+			} catch (RemoteException e) {
+				// The client is dead. Remove it from the list; we are going
+				// through the list from back to front so this is safe to do
+				// inside the loop.
+				mClients.remove(i);
+				//Log.i("MyService", "Service informed Activity of Suicide. -");
+			}
+		}
+		//Log.i("MyService", "Service informed Activity of Suicide.");
+	}
+	private void LogMessage(String m) {
+		Log.e("ntripS",m);
+
+		// Check if log is too long, shorten if necessary.
+		if (logmsgs.length() > 1000) {
+			int tempi = logmsgs.length();
+			tempi = logmsgs.indexOf("\n", tempi - 500);
+			logmsgs = logmsgs.substring(tempi + 1);
+		}
+
+		// Append new message to the log.
+		logmsgs += "\n" + TheTimeIs() + m;
+
+		if (DisplayMsgType == 0) {
+			// Build bundle
+			Bundle b = new Bundle();
+			b.putString("logappend", TheTimeIs() + m);
+			for (int i = mClients.size() - 1; i >= 0; i--) {
+				try {
+					Message msg = Message.obtain(null, MSG_UPDATE_LOG_APPEND);
+					msg.setData(b);
+					mClients.get(i).send(msg);
+				} catch (RemoteException e) {
+					// The client is dead. Remove it from the list; we are going
+					// through the list from back to front so this is safe to do
+					// inside the loop.
+					mClients.remove(i);
+				}
+			}
+		}
+	}
+	private void LogNMEA(String m) {
+		// Check if log is too long, shorten if necessary.
+		if (lognmea.length() > 1000) {
+			int tempi = lognmea.length();
+			tempi = lognmea.indexOf("\n", tempi - 500);
+			lognmea = lognmea.substring(tempi + 1);
+		}
+
+		// Append new message to the log.
+		lognmea += "\n" + m;
+
+		if (DisplayMsgType == 1) {
+			// Build bundle
+			Bundle b = new Bundle();
+			b.putString("logappend", m);
+			for (int i = mClients.size() - 1; i >= 0; i--) {
+				try {
+					Message msg = Message.obtain(null, MSG_UPDATE_LOG_APPEND);
+					msg.setData(b);
+					mClients.get(i).send(msg);
+				} catch (RemoteException e) {
+					// The client is dead. Remove it from the list; we are going
+					// through the list from back to front so this is safe to do
+					// inside the loop.
+					mClients.remove(i);
+				}
+			}
+		}
+	}
+	private void sendAllLogMessagesToUI() {
+		Bundle b = new Bundle();
+		if (DisplayMsgType == 1) {
+			b.putString("logfull", lognmea);
+		} else {
+			b.putString("logfull", logmsgs);
+		}
+
+		for (int i = mClients.size() - 1; i >= 0; i--) {
+			try {
+				Message msg = Message.obtain(null, MSG_UPDATE_LOG_FULL);
+				msg.setData(b);
+				mClients.get(i).send(msg);
+			} catch (RemoteException e) {
+				// The client is dead. Remove it from the list; we are going
+				// through the list from back to front so this is safe to do
+				// inside the loop.
+				mClients.remove(i);
+			}
+		}
+	}
+	private void SetDisplayMsgType(int MsgType) {
+		if (lognmea.length() == 0 && MsgType == 1) { //Can't change to NMEA, no data there
+			MsgType = 0;
+		}
+		if (DisplayMsgType != MsgType) { //Type changed. Need to re-send everything
+			DisplayMsgType = MsgType;
+			sendAllLogMessagesToUI();
+		}
+	}
+	private void sendStatusMessageToUI() {
+		// Build bundle
+		String textFix;
+		switch (FixType) {
+		case 0:
+			textFix = "Invalid";
+			break;
+		case 1:
+			textFix = "GPS";
+			break;
+		case 2:
+			textFix = "DGPS";
+			break;
+		case 3:
+			textFix = "PPS";
+			break;
+		case 4:
+			textFix = "RTK";
+			break;
+		case 5:
+			textFix = "FloatRTK";
+			break;
+		case 6:
+			textFix = "Estimated";
+			break;
+		case 7:
+			textFix = "Manual";
+			break;
+		case 8:
+			textFix = "Simulation";
+			break;
+		case 9:
+			textFix = "WAAS";
+			break;
+		case 10:
+			textFix = "No Data";
+			break;
+		default:
+			textFix = "Unknown";
+		}
+		if (FixType < 10) {
+			textFix += ":" + SatsTracked;
+		}
+
+		Bundle b = new Bundle();
+		b.putString("fixtype", textFix);
+		b.putString("info1", GetOutputInfo(outInfo1));
+		b.putString("info2", GetOutputInfo(outInfo2));
+
+		for (int i = mClients.size() - 1; i >= 0; i--) {
+			try {
+				Message msg = Message.obtain(null, MSG_UPDATE_STATUS);
+				msg.setData(b);
+				mClients.get(i).send(msg);
+			} catch (RemoteException e) {
+				// The client is dead. Remove it from the list; we are going
+				// through the list from back to front so this is safe to do
+				// inside the loop.
+				mClients.remove(i);
+			}
+		}
+		TicksSinceLastStatusSent = 0; // Reset to zero
+	}
+	private String GetOutputInfo(int infotype) {
+		switch (infotype) {
+		case 1: // Correction Age
+			return "Age: " + CorrectionAge + "s";
+		case 2: // Elevation Feet
+			return new DecimalFormat("0.0").format(Elevation * 3.2808399) + "'";
+		case 3: // Elevation Meters
+			return new DecimalFormat("0.000").format(Elevation) + "m";
+		case 4: // Speed MPH
+			return new DecimalFormat("0.0").format(Speed * 1.15077945) + " MPH";
+		case 5: // Speed Km/h
+			return new DecimalFormat("0.0").format(Speed * 1.852) + " km/h";
+		case 6: // Heading
+			return new DecimalFormat("0.0").format(Heading) + "�";
+		case 7: // H-DOP
+			return "HDOP:" + HDOP;
+		case 8: // V-DOP
+			return "VDOP";
+		case 9: // P-DOP
+			return "PDOP";
+		default: // Nothing
+			return "";
+		}
+	}
+
+	@Override
+	public void onCreate() {
+		super.onCreate();
+		Log.i("ntripS", "-Service Started.");
+		logmsgs = TheTimeIs() + "Service Started";
+
+		isRunning = true;
+		LoadPreferences(false);
+
+		//mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+		timer.scheduleAtFixedRate(new TimerTask(){ public void run()
+		{onTimerTick_TimerThread();}}, 0, 1000L);
+	}
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		//Log.i("MyService", "Received start id " + startId + ": " + intent);
+		return START_STICKY; // run until explicitly stopped.
+	}
+	private void LoadPreferences(Boolean NotifyOfChanges) {
+		SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+		Boolean NetworkSettingsChanged = false;
+		try {
+			outInfo1 = Integer.parseInt(preferences.getString("info1", "1"));
+			outInfo2 = Integer.parseInt(preferences.getString("info2", "4"));
+			AutoConfigReceiver = preferences.getString("receiverautoconfig", "none");
+
+			//android.util.Log.d("Debug",""+outInfo1);
+			//android.util.Log.d("Debug",""+outInfo2);
+			//android.util.Log.d("Debug",""+AutoConfigReceiver);
+
+			//BTShouldAutoSwitch = preferences.getBoolean("autoswitchbluetooth", false);
+			//UseHTCConnectionWorkaround = preferences.getBoolean("htcconnectworkaround", false);
+			/*Boolean tNetworkTestingMode = false;//preferences.getBoolean("ntriptestmode", false);
+			if (tNetworkTestingMode) { //Now in testing mode, try to stop BT in case it is running.
+				//BTstop();
+				LogMessage("Network Testing Mode. Will not connect to receiver.");
+			}
+			NetworkTestingMode = tNetworkTestingMode;
+
+			String newSaveDataType = preferences.getString("savedatatype", "none");
+			if (newSaveDataType.equals("allbinary")) {
+				SaveDataStreamToFileType = 1;
+			} else if (newSaveDataType.equals("nmeaggarmc")) {
+				SaveDataStreamToFileType = 2;
+			} else {
+				SaveDataStreamToFileType = 0;
+			}
+
+			String tNetworkProtocol = preferences.getString("networkprotocol", "none");
+			if (!tNetworkProtocol.equals(NetworkProtocol)) {
+				NetworkProtocol = tNetworkProtocol;
+				NetworkSettingsChanged = true;
+			}*/
+
+			//android.util.Log.d("Debug","NP "+NetworkProtocol);
+			//NTRIPShouldBeConnected = preferences.getBoolean("usentrip", false);
+
+			/*String newMACAddress = preferences.getString("bluetooth_mac", "00:00:00:00:00:00");
+			if (newMACAddress != MACAddress) {
+				if (!MACAddress.equals("00:00:00:00:00:00")) {
+					LogMessage("BT: Target Device Changed. You will need to Disconnet/Reconnect.");
+				}
+				MACAddress = newMACAddress;
+				BTstop();
+			}*/
+/*
+			String tSERVERIP = preferences.getString("ntripcasterip", "165.206.203.10");
+			if (tSERVERIP.length() > 2) {
+				if (!tSERVERIP.equals(SERVERIP)) {
+					SERVERIP = tSERVERIP;
+					NetworkSettingsChanged = true;
+				}
+			} else {
+				LogMessage("Error: Server IP is too short");
+				//NTRIPShouldBeConnected = false;
+				NetworkProtocol = "none";
+			}
+
+			//android.util.Log.d("Debug","SI "+SERVERIP);
+
+			String tSERVERPORT = preferences.getString("ntripcasterport", "10000");
+			if (isInteger(tSERVERPORT)) {
+				int iSERVERPORT = Integer.parseInt(tSERVERPORT);
+				if (iSERVERPORT > 0 && iSERVERPORT < 65536) {
+					if (SERVERPORT != iSERVERPORT) {
+						SERVERPORT = iSERVERPORT;
+						NetworkSettingsChanged = true;
+					}
+				} else {
+					LogMessage("Error: Port number is invalid");
+					//NTRIPShouldBeConnected = false;
+					NetworkProtocol = "none";
+				}
+			}
+
+			//android.util.Log.d("Debug","SP "+SERVERPORT);
+
+			String tUSERNAME = preferences.getString("ntripusername", "");
+			if (!tUSERNAME.equals(USERNAME)) {
+				USERNAME = tUSERNAME;
+				NetworkSettingsChanged = true;
+			}
+
+			//android.util.Log.d("Debug","UN "+USERNAME);
+
+			String tPASSWORD = preferences.getString("ntrippassword", "");
+			if (!tPASSWORD.equals(PASSWORD)) {
+				PASSWORD = tPASSWORD;
+				NetworkSettingsChanged = true;
+			}
+
+			String tMOUNTPOINT = preferences.getString("ntripstream", "");
+			if (!tMOUNTPOINT.equals(MOUNTPOINT)) {
+				MOUNTPOINT = tMOUNTPOINT;
+				NetworkSettingsChanged = true;
+			}
+
+			//android.util.Log.d("Debug","MP "+MOUNTPOINT);
+
+			String tUseManualLocation = preferences.getString("ntriplocation", "auto");
+			Boolean uUseManualLocation = false;
+			if (tUseManualLocation.equals("manual")) {uUseManualLocation = true;}
+
+			if (uUseManualLocation != UseManualLocation) {
+				UseManualLocation = uUseManualLocation;
+				NetworkSettingsChanged = true;
+			}
+
+			if (UseManualLocation) {
+				String tLat = preferences.getString("ntriplatitude", "");
+				String tLon = preferences.getString("ntriplongitude", "");
+				Double dLat = 1000.0;
+				Double dLon = 1000.0;
+				try {
+					dLat = Double.parseDouble(tLat);
+			    } catch(NumberFormatException nfe) {}
+			    try {
+					dLon = Double.parseDouble(tLon);
+			    } catch(NumberFormatException nfe) {}
+			    if (dLat != ManualLat) {
+			    	ManualLat = dLat;
+			    	NetworkSettingsChanged = true;
+			    }
+			    if (dLon != ManualLon) {
+			    	ManualLon = dLon;
+			    	NetworkSettingsChanged = true;
+			    }
+			}*/
+
+		} catch (NumberFormatException nfe) {}
+
+		if (!NetworkProtocol.equals("none")) { //Should be connected
+			if (NetworkSettingsChanged) {
+				if (NetworkIsConnected) { // Need to disconnect and reconnect
+					TerminateNTRIPThread(true);
+
+				} else { // Just need to connect
+					NetworkReConnectInTicks = 2;
+				}
+			}
+		} else { //Should not be connected
+			if (NetworkIsConnected) {
+				TerminateNTRIPThread(false);
+
+
+			}
+			LogMessage("Network: Disabled");
+		}
+
+		/*String sourcetable = preferences.getString("ntripsourcetable", "");
+		// Log.i("sourcetable", sourcetable);
+		String[] lines = sourcetable.split("\\r?\\n");
+		for (int i = 0; i < lines.length; i++) {
+			String[] fields = lines[i].split(";");
+			if (fields.length > 4) {
+				if (fields[0].toLowerCase().equals("str")) {
+					if (fields[1].equals(MOUNTPOINT)) { // Found the right stream
+						if (fields[11].equals("1")) { // Stream requires GGA
+							NTRIPStreamRequiresGGA = true;
+							//Log.i("LoadPreferences", "This stream requires GGA data");
+						} else {
+							NTRIPStreamRequiresGGA = false;
+							//Log.i("LoadPreferences", "This stream does NOT require GGA data");
+						}
+					}
+				}
+			}
+		}*/
+
+		if (NotifyOfChanges) {
+			if (NetworkSettingsChanged) {
+				LogMessage("Network settings changed.");
+			}
+		}
+	}
+	public boolean isInteger(String input) {
+		try {
+			Integer.parseInt(input);
+			return true;
+		} catch (Exception e) {
+			return false;
+		}
+	}
+	public static boolean isRunning() {
+		return isRunning;
+	}
+	private String TheTimeIs() {
+		Calendar calendar = Calendar.getInstance();
+		int hours = calendar.get(Calendar.HOUR);
+		int minutes = calendar.get(Calendar.MINUTE);
+		int seconds = calendar.get(Calendar.SECOND);
+		return Make2Digits(hours) + ":" + Make2Digits(minutes) + ":"
+				+ Make2Digits(seconds) + " ";
+	}
+	private String Make2Digits(int i) {
+		if (i < 10) {
+			return "0" + i;
+		} else {
+			return Integer.toString(i);
+		}
+	}
+	private void onTimerTick_TimerThread() {
+		// This is running on a separate thread. Cannot do UI stuff from here.
+		// Send a message to the handler to do that stuff on the main thread.
+		handler.sendMessage(handler.obtainMessage(MSG_TIMER_TICK));
+	}
+	private void onTimerTick() { // Back on the main thread.
+		TicksSinceLastStatusSent++;
+		if (TicksSinceLastStatusSent > 4) {
+			if (FixType != 10) { // Only log this once
+				LogMessage("Fix type is now Unknown");
+				FixType = 10;// No data coming in for 5 seconds
+			}
+			SatsTracked = 0;
+			HDOP = "?";
+			CorrectionAge = "?";
+			Elevation = 0;
+			sendStatusMessageToUI();
+		}
+
+		TicksSinceLastDeviceCheck++;
+		if(TicksSinceLastDeviceCheck>5) {
+			checkDevice();
+		}
+
+		//Log.i("handleMessage", "NTRIPIsConnected: " + NTRIPIsConnected);
+		if (!NetworkProtocol.equals("none") && !NetworkIsConnected && (getDeviceState() == STATE_CONNECTED || NetworkTestingMode) && GNSSDeviceIO.needsNTRIP()) { // Network Thread is currently not running
+			if (NetworkReConnectInTicks > 0) { // We are counting down to time to start the Network thread
+				NetworkReConnectInTicks--;
+				if (NetworkReConnectInTicks == 0) { // It is time to start the NTRIP thread
+					NetworkConnectionAttempts++;
+					if (NetworkConnectionAttempts == 1) {
+						LogMessage("Network: Connecting...");
+					} else {
+						LogMessage("Network: Connecting... Attempt " + NetworkConnectionAttempts);
+					}
+					NTRIPResponse = "";
+					NetworkReceivedByteCount = 0;
+					NetworkDataMode = 0;
+					if (NetworkProtocol.equals("rawtcpip")) {
+						NetworkDataMode = 99;
+					}
+					nThread = new Thread(new NetworkClient(NetworkProtocol, SERVERIP, SERVERPORT, MOUNTPOINT, USERNAME, PASSWORD));
+					nThread.start();
+					NetworkIsConnected = true;
+					LogMessage("Network: Conectado...");
+					sendMsgToClients(MSG_NTRIP_CONNECTED,null,0,0);
+				}
+			}
+		}else {
+			/*LogMessage("no inicia ntrip por settings");
+			if(NetworkIsConnected) LogMessage("network is connected ;-(, protocol:"+NetworkProtocol);
+			if(!NetworkIsConnected) LogMessage("network is NOT connected, protocol:"+NetworkProtocol);
+			LogMessage(String.format("device state %d",getDeviceState()));*/
+		}
+	}
+
+
+	// Network Data Stuff
+	public class NetworkClient implements Runnable {
+		String nProtocol = "";
+		String nServer = "";
+		int nPort = 2101;
+		String nMountpoint = "";
+		String nUsername = "";
+		String nPassword = "";
+
+		public NetworkClient(String pProtocol, String pServer, int pPort, String pMountpoint, String pUsername, String pPassword) {
+			nProtocol = pProtocol;
+			nServer = pServer;
+			nPort = pPort;
+			nMountpoint = pMountpoint;
+			nUsername = pUsername;
+			nPassword = pPassword;
+		}
+
+		public void run() {
+			try {
+             				//Log.i(NTAG, "Creating socket");
+             				SocketAddress sockaddr = new InetSocketAddress(nServer, nPort);
+             				nsocket = new Socket();
+             				nsocket.connect(sockaddr, 10 * 1000); // 10 second connection timeout
+             				if (nsocket.isConnected()) {
+             					nsocket.setSoTimeout(20 * 1000); // 20 second timeout once data is flowing
+             					nis = nsocket.getInputStream();
+             					nos = nsocket.getOutputStream();
+             					//Log.i(NTAG, "Socket created, streams assigned");
+
+             					if (nProtocol.equals("ntripv1")) {
+             						// Build request message
+             						//Log.i(NTAG, "This is a NTRIP connection");
+             						String requestmsg = "GET /" + nMountpoint + " HTTP/1.0\r\n";
+             						requestmsg += "User-Agent: NTRIP SISANT-NTRIPClient/2019\r\n";
+             						requestmsg += "Accept: */*\r\n";
+             						requestmsg += "Connection: close\r\n";
+             						if (nUsername.length() > 0) {
+             							requestmsg += "Authorization: Basic " + ToBase64(nUsername + ":" + nPassword);
+             						}
+             						requestmsg += "\r\n";
+             						nos.write(requestmsg.getBytes());
+             						//Log.i("Request", requestmsg);
+             					} else {
+             						//Log.i(NTAG, "This is a raw TCP/IP connection");
+             					}
+
+             					//Log.i(NTAG, "Waiting for inital data...");
+             					byte[] buffer = new byte[4096];
+             					int read = nis.read(buffer, 0, 4096); // This is blocking
+             					while (read != -1) {
+             						byte[] tempdata = new byte[read];
+             						System.arraycopy(buffer, 0, tempdata, 0, read);
+             						// Log.i(NTAG, "Got data: " + new String(tempdata));
+             						handler.sendMessage(handler.obtainMessage(MSG_NETWORK_GOT_DATA, tempdata));
+             						read = nis.read(buffer, 0, 4096); // This is blocking
+             					}
+             				}
+             			} catch (SocketTimeoutException ex) {
+             				handler.sendMessage(handler.obtainMessage(MSG_NETWORK_TIMEOUT));
+             			} catch (Exception e) {
+             				e.printStackTrace();
+             			} finally {
+             				try {
+             					nis.close();
+             					nos.close();
+             					nsocket.close();
+             				} catch (IOException e) {
+             					e.printStackTrace();
+             				} catch (Exception e) {
+             					e.printStackTrace();
+             				}
+             				//Log.i(NTAG, "Finished");
+             				handler.sendMessage(handler.obtainMessage(MSG_NETWORK_FINISHED));
+             			}
+		}
+
+		private String ToBase64(String in) {
+			return Base64.encodeToString(in.getBytes(), 4);
+		}
+	}
+	public void SendDataToNetwork(String cmd) { // You run this from the main thread.
+		try {
+			if (nsocket != null) {
+				if (nsocket.isConnected()) {
+					if (!nsocket.isClosed()) {
+						//Log.i("SendDataToNetwork", "SendDataToNetwork: Writing message to socket");
+						nos.write(cmd.getBytes());
+					} else {
+						//Log.i("SendDataToNetwork", "SendDataToNetwork: Cannot send message. Socket is closed");
+					}
+				} else {
+					//Log.i("SendDataToNetwork", "SendDataToNetwork: Cannot send message. Socket is not connected");
+				}
+			}
+		} catch (Exception e) {
+			//Log.i("SendDataToNetwork", "SendDataToNetwork: Message send failed. Caught an exception");
+		}
+	}
+	private void ParseNetworkDataStream(byte[] buffer) {
+		// Log.i("handleMessage", "bytes from network:" + buffer.length + ", " + new String(buffer));
+		if (NetworkDataMode == 0) { // We're just starting up.
+			NTRIPResponse += new String(buffer); // Add what we got to the string, in case the response spans more than one packet.
+			if (NTRIPResponse.startsWith("ICY 200 OK")) {// Data stream confirmed.
+				NetworkDataMode = 99; // Put in to data mode
+				LogMessage("NTRIP: Connected to caster");
+			} else if (NTRIPResponse.indexOf("401 Unauthorized") > 1) {
+				//Log.i("handleMessage", "Invalid Username or Password.");
+				LogMessage("NTRIP: Bad username or password.");
+				TerminateNTRIPThread(false);
+			} else if (NTRIPResponse.startsWith("SOURCETABLE 200 OK")) {
+				LogMessage("NTRIP: Downloading stream list");
+				//NTRIPShouldBeConnected = false; // So it doesn't reconnect over and over
+				NetworkProtocol = "none"; // So it doesn't reconnect over and over
+				NetworkDataMode = 1; // Put into source table mode
+				NTRIPResponse = NTRIPResponse.substring(20); // Drop the beginning of the data
+				CheckIfDownloadedSourceTableIsComplete();
+			} else if (NTRIPResponse.length() > 1024) { // We've received 1KB of data but no start command. WTF?
+				LogMessage("NTRIP: Unrecognized server response:");
+				LogMessage(NTRIPResponse);
+				TerminateNTRIPThread(true);
+			}
+		} else if (NetworkDataMode == 1) { // Save SourceTable
+			NTRIPResponse += new String(buffer); // Add what we got to the string, in case the response spans more than one packet.
+			CheckIfDownloadedSourceTableIsComplete();
+		} else { // Data streaming mode. Forward data to bluetooth socket
+			if (NetworkReceivedByteCount == 0) {
+				if (NetworkProtocol.equals("rawtcpip")) {
+					LogMessage("Network: Connected to server " + SERVERIP + ":" + SERVERPORT);
+				}
+				SendByteCountProgressBarVisibility(1);
+			}
+
+			NetworkReceivedByteCount += buffer.length;
+			SendByteCountToActivity();
+			LogMessage(String.format("got %d bytes from net",buffer.length));
+			if(currentDevice!=null) {
+				GNSSDeviceIO.sendDataToDevice(buffer);
+			}
+		}
+	}
+	private void SendByteCountToActivity() {
+		for (int i = mClients.size() - 1; i >= 0; i--) {
+			try {
+				mClients.get(i).send(Message.obtain(null, MSG_UPDATE_BYTESIN, NetworkReceivedByteCount, 0));
+			} catch (RemoteException e) {
+				// The client is dead. Remove it from the list; we are going
+				// through the list from back to front so this is safe to do
+				// inside the loop.
+				mClients.remove(i);
+			}
+		}
+	}
+	private void SendByteCountProgressBarVisibility(int val) {
+		for (int i = mClients.size() - 1; i >= 0; i--) {
+			try {
+				mClients.get(i).send(Message.obtain(null, MSG_SHOW_PROGRESSBAR, val, 0));
+			} catch (RemoteException e) {
+				// The client is dead. Remove it from the list; we are going
+				// through the list from back to front so this is safe to do
+				// inside the loop.
+				mClients.remove(i);
+				LogMessage("client dead");
+			}
+		}
+	}
+	private void CheckIfDownloadedSourceTableIsComplete() {
+		if (NTRIPResponse.indexOf("\r\nENDSOURCETABLE") > 0) {
+			//Log.i("Sourcetable", "Found the end");
+			LogMessage("NTRIP: Downloaded stream list");
+			LogMessage("Please select a stream");
+			LogMessage("Network: Disabled");
+			SharedPreferences preferences = PreferenceManager
+					.getDefaultSharedPreferences(getBaseContext());
+			SharedPreferences.Editor editor = preferences.edit();
+			editor.putString("ntripsourcetable", NTRIPResponse);
+			editor.commit();
+		}
+	}
+
+
+	private void checkDevice() {
+		//si está conectado lo deja en paz, si no entonces revisar si hay USB
+		if(currentDevice!=null && getDeviceState()==STATE_CONNECTED) {
+			LogMessage("ya hay un device conectado, dejarlo");
+			TicksSinceLastDeviceCheck=0;
+			return;
+		}
+
+		GNSSDeviceIO.DeviceInfo dev = GNSSDeviceUSBIO.findDevice((UsbManager) this.getSystemService(Context.USB_SERVICE));
+		if(dev==null) {
+			LogMessage("no hay device usb");
+			setDevice(null,STATE_NONE);
+			if (NetworkIsConnected) {
+				TerminateNTRIPThread(true);
+			}
+		}
+		else {
+			LogMessage("sí hay device usb");
+			//intentar abrirlo...
+			try {
+				GNSSDeviceUSBIO.openDevice(mMessenger);
+				setDevice(dev, STATE_CONNECTED);
+				LogMessage("usb conectado");
+			}
+			catch(Exception e) {
+				LogMessage("no se pudo abrir");
+				setDevice(null,STATE_NONE);
+			}
+
+		}
+		TicksSinceLastDeviceCheck=0;
+	}
+
+	private synchronized void setDevice(GNSSDeviceIO.DeviceInfo dev, int state) {
+		//Log.i(BTAG, "setBTState() " + mBTState + " -> " + state);
+		mDeviceState = state;
+		currentDevice = dev;
+	}
+	public synchronized int getDeviceState() {
+		if(currentDevice==null)
+			mDeviceState = STATE_NONE;
+		return mDeviceState;
+	}
+
+
+    private synchronized void setCorrectionState(int state) {
+		mCorrectionState = state;
+    }
+	public synchronized int getCorrectionState() {
+		return mCorrectionState;
+	}
+
+
+
+
+	private String CalculateChecksum(String line) {
+		int chk = 0;
+		for (int i = 0; i < line.length(); i++) {
+			chk ^= line.charAt(i);
+		}
+		String chk_s = Integer.toHexString(chk).toUpperCase(); // convert the integer to a HexString in upper case
+		while (chk_s.length() < 2) { // checksum must be 2 characters. if it falls short, add a zero before the checksum
+			chk_s = "0" + chk_s;
+		}
+		return chk_s;
+	}
+
+
+
+
+
+	public Handler handler = new Handler() { // Handler for data coming from the network and bluetooth sockets
+		@Override
+		public void handleMessage(Message msg) {
+			switch (msg.what) {
+			case MSG_TIMER_TICK:
+				onTimerTick();
+				break;
+			case MSG_NETWORK_GOT_DATA:
+				byte[] buffer1 = (byte[]) msg.obj;
+				ParseNetworkDataStream(buffer1);
+				break;
+			case MSG_NETWORK_TIMEOUT:
+				//Log.i("handleMessage", "MSG_NETWORK_TIMEOUT");
+				NetworkReceivedByteCount = 0;
+				SendByteCountToActivity();
+				//if (NTRIPShouldBeConnected) {
+				if (!NetworkProtocol.equals("none")) { //Should be connected
+					LogMessage("Network connection timed out.");
+				}
+				break;
+			case MSG_NETWORK_FINISHED:
+				//Log.i("handleMessage", "MSG_NETWORK_FINISHED");
+				NetworkIsConnected = false;
+				sendMsgToClients(MSG_NTRIP_DISCONNECTED,null,0,0);
+				NetworkReConnectInTicks = 2;
+				break;
+
+
+			case MSG_BT_GOT_DATA:
+				// Log.i("handleMessage", "MSG_BT_GOT_DATA");
+				byte[] buffer2 = (byte[]) msg.obj;
+				ParseBTDataStream(buffer2);
+				break;
+			case MSG_BT_LOG_MESSAGE:
+				LogMessage((String) msg.obj);
+				break;
+			case MSG_BT_FINISHED:
+				//Log.i("handleMessage", "MSG_BT_FINISHED");
+				BTstop();
+				break;
+			default:
+				super.handleMessage(msg);
+			}
+		}
+	};
+
+
+	private void TerminateNTRIPThread(boolean restart) {
+		if (nThread != null) { // If the thread is currently running, close the socket and interrupt it.
+			try {
+				nis.close();
+				nos.close();
+				nsocket.close();
+			} catch (Exception e) {
+			}
+			Thread moribund = nThread;
+			nThread = null;
+			LogMessage("Network: Disconnected");
+			sendMsgToClients(MSG_NTRIP_DISCONNECTED,null,0,0);
+			moribund.interrupt();
+		}
+
+		NetworkReceivedByteCount = 0;
+		SendByteCountProgressBarVisibility(0);
+		SendByteCountToActivity();
+		//NTRIPShouldBeConnected = restart;
+		if (restart) {
+			NetworkReConnectInTicks = 2;
+		} else {
+			NetworkProtocol = "none"; //Don't automatically restart
+		}
+	}
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+
+		//SaveNMEAChunk(); //Write data to file
+		//SaveRawDataChunk(); //Write data to file
+
+		// Kill threads
+		if (timer != null) {timer.cancel();}
+		TerminateNTRIPThread(false);
+
+		if(currentDevice!=null) {
+			GNSSDeviceIO.disconnect();
+			Log.e("sisant","desconectando device en destroy del mainservice");
+		}
+
+		BTstop();
+
+		if (BTShouldAutoSwitch && BTwasDisabled) { // Turn BT off
+			//Log.i(BTAG, "ON DESTROY: Turning BT back off");
+			mBluetoothAdapter.disable();
+			Toast.makeText(this, "Disabling Bluetooth...", Toast.LENGTH_SHORT).show();
+		}
+
+		stopForeground(true);
+		//Log.i("MyService", "Service Stopped.");
+		isRunning = false;
+	}
+}

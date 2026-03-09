@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Screen title -->
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="Agregar equipo WIFI"
+        android:textColor="#130505"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- IP entry field -->
+    <EditText
+        android:id="@+id/et_ip_input"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="8dp"
+        android:digits="0123456789."
+        android:hint="Escriba la IP aquí"
+        android:inputType="textUri"
+        android:textColor="#091247"
+        android:textColorHint="#1F0909"
+        app:layout_constraintEnd_toStartOf="@+id/btn_add_ip"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_title" />
+
+    <!-- Add button, initially disabled until EditText is valid -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_add_ip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:enabled="false"
+        android:text="Agregar"
+        android:textColor="@color/white"
+        app:layout_constraintBaseline_toBaselineOf="@id/et_ip_input"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:strokeColor="?attr/colorOnSurface"
+        app:strokeWidth="1dp" />
+
+    <!-- Clear all saved IPs -->
+    <Button
+        android:id="@+id/btn_clear_ips"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:text="Borrar todos"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/btn_close_ips"
+        app:layout_constraintStart_toStartOf="parent" />
+    <Button
+        android:id="@+id/btn_close_ips"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:text="Cerrar"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/btn_clear_ips" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

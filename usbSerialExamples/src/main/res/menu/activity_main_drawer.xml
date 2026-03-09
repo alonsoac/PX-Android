@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+<!-- iconos en https://fonts.google.com/icons -->
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_equipos"
+            android:icon="@drawable/ic_menu_gps"
+            android:title="@string/menu_equipos" />
+        <item
+            android:id="@+id/nav_correcciones"
+            android:icon="@drawable/ic_menu_antenna"
+            android:title="@string/menu_correcciones" />
+        <item
+            android:id="@+id/nav_base"
+            android:icon="@drawable/ic_menu_base"
+            android:title="@string/menu_base" />
+        <item
+            android:id="@+id/nav_enlaces"
+            android:icon="@drawable/ic_menu_enlaces"
+            android:title="@string/menu_enlaces" />
+        <item
+            android:id="@+id/nav_listabases"
+            android:icon="@drawable/ic_menu_listabases"
+            android:title="@string/menu_listabases" />
+        <item
+            android:id="@+id/nav_ign"
+            android:icon="@drawable/ic_menu_ign"
+            android:title="@string/menu_ign" />
+    </group>
+</menu>

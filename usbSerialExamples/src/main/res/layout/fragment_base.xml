@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".fragConfigBase">
+
+    <!-- TODO: Update blank fragment layout -->
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Configurar coordenadas fijas para la base:"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <RadioGroup
+            android:id="@+id/radiogrpBaseCoords"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <RadioButton
+                android:id="@+id/rbtnNoBase"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Desactivado / Usar como rover"
+                android:textSize="18sp" />
+
+            <RadioButton
+                android:id="@+id/rbtnPromBase"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Promediar"
+                android:textSize="18sp" />
+
+            <RadioButton
+                android:id="@+id/rbtnHAS"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Activar HAS"
+                android:textSize="18sp" />
+
+      <!--      <RadioButton
+                android:id="@+id/rbtnNTRIPBase"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Fijar coordenadas actuales\nRTK Fijo(2s): 500000.23 1100000.23 1120.23"
+                android:textSize="18sp" />-->
+
+            <RadioButton
+                android:id="@+id/rbtnIndicarCoords"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Indicar coordenadas"
+                android:textSize="18sp" />
+
+
+
+
+
+
+        </RadioGroup>
+
+        <TableLayout
+            android:id="@+id/tablaBaseCoords"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="25sp"
+            android:visibility="gone">
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/textView1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Latitud / Y"
+                    android:labelFor="@id/editTextBaseY"
+                    android:textSize="18sp" />
+
+                <EditText
+                    android:id="@+id/editTextBaseY"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ems="14"
+                    android:digits="0123456789.-"
+                    android:text="9.933946880" />
+            </TableRow>
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/textView2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Longitud / X"
+                    android:labelFor="@id/editTextBaseX"
+                    android:textSize="18sp" />
+
+
+                <EditText
+                    android:id="@+id/editTextBaseX"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:digits="0123456789.-"
+                    android:ems="16"
+                    android:text="-84.038584" />
+            </TableRow>
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/textView3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="start"
+                    android:text="Altura elipsoidal\n(centro de antena)"
+                    android:labelFor="@id/editTextBaseZ"
+                    android:textSize="18sp" />
+
+
+                <EditText
+                    android:id="@+id/editTextBaseZ"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ems="7"
+                    android:digits="0123456789.-"
+                    android:text="1250" />
+            </TableRow>
+
+        </TableLayout>
+
+        <Switch
+            android:id="@+id/switchSendNTRIP"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="25sp"
+            android:gravity="end"
+            android:minHeight="48dp"
+            android:text="Enviar correcciones por Internet / NTRIP"
+            android:textSize="18sp" />
+
+        <Switch
+            android:id="@+id/switchSendRadio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="25sp"
+            android:gravity="end"
+            android:minHeight="48dp"
+            android:text="Enviar correcciones por radio"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/baseCorrStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="TextView"
+            android:textAlignment="center"
+            android:textSize="18sp" />
+
+        <LinearLayout
+            android:id="@+id/barraBtnsBaseGuardar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="bottom"
+            android:orientation="horizontal"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:paddingBottom="5dp"
+            android:visibility="visible">
+
+            <Button
+                android:id="@+id/btnCancelarBase"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="2"
+                android:text="Cancelar" />
+
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <Button
+                android:id="@+id/btnGuardarBase"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="2"
+                android:text="Guardar" />
+        </LinearLayout>
+
+
+    </LinearLayout>
+
+</FrameLayout>

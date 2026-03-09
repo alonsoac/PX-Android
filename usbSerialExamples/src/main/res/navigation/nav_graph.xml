@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/nav_equipos">
+
+    <fragment
+        android:id="@+id/nav_correcciones"
+        android:name="com.sisant.android.gnss.fragCorrecciones"
+        android:label="Correcciones"
+        tools:layout="@layout/fragment_correcciones" />
+    <fragment
+        android:id="@+id/nav_base"
+        android:name="com.sisant.android.gnss.fragConfigBase"
+        android:label="Configurar Base"
+        tools:layout="@layout/fragment_base" />
+    <fragment
+        android:id="@+id/nav_enlaces"
+        android:name="com.sisant.android.gnss.fragEnlaces"
+        android:label="Enlaces"
+        tools:layout="@layout/fragment_enlaces" />
+    <fragment
+        android:id="@+id/nav_equipos"
+        android:name="com.sisant.android.gnss.fragEquipos"
+        android:label="Equipos"
+        tools:layout="@layout/fragment_equipos" />
+    <fragment
+        android:id="@+id/nav_listabases"
+        android:name="com.sisant.android.gnss.fragListaBases"
+        android:label="Lista de bases"
+        tools:layout="@layout/fragment_listabases" />
+    <fragment
+        android:id="@+id/nav_ign"
+        android:name="com.sisant.android.gnss.fragIGN"
+        android:label="Accesos IGN"
+        tools:layout="@layout/fragment_ign" />
+</navigation>

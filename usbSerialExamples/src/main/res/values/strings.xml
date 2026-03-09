@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_title">PX GNSS</string>
+    <string name="notifyservice">PX GNSS Notification</string>
+    <string name="app_name">PX GNSS</string>
+    <string name="corr_service">PX GNSS</string>
+    <string name="import_file">PX GNSS - Importar archivo</string>
+    <string name="import_conf">PX GNSS - Importar configuración</string>
+    <string name="refreshing">Refrescando...</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+
+    <string name="navigation_drawer_open">Abrir menú</string>
+    <string name="navigation_drawer_close">Cerrar Menú</string>
+    <string name="nav_header_title">PX GNSS</string>
+    <string name="nav_header_subtitle">pxgnss.com</string>
+    <string name="nav_header_desc">Menú</string>
+
+    <string name="menu_equipos">Equipos</string>
+    <string name="menu_correcciones">Configurar Rover</string>
+    <string name="menu_correcciones_base">Usar como Rover</string>
+    <string name="menu_base">Configurar Base</string>
+    <string name="menu_enlaces">Enlaces</string>
+    <string name="menu_ign">Accesos NTRIP</string>
+    <string name="menu_listabases">Lista de bases</string>
+
+    <string name="vermapared">
+        <![CDATA[
+        <br>
+<a href="http://pxgnss.com/red">Ver mapa de bases</a>
+        ]]>
+    </string>
+    <string name="statusbase">
+        <![CDATA[
+        <br>
+<a href="http://pxgnss.com/status/XXX">Ver estado de base XXX</a>
+        ]]>
+    </string>
+
+</resources>

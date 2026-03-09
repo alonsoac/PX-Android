@@ -1,0 +1,3 @@
+include  'usbSerialForAndroid','usbSerialExamples'
+
+include ':nTRIPLib'

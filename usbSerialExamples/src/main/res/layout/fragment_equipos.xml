@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".fragEquipos">
+
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+
+        <TextView
+            android:id="@+id/demoTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:autoSizeTextType="uniform"
+            android:maxLines="1"
+            android:text="PX Conector de Equipos"
+            android:textSize="30sp"
+            android:textStyle="bold"
+            app:autoSizeTextType="uniform"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:layout_conversion_wrapHeight="85"
+            tools:layout_conversion_wrapWidth="396" />
+
+        <TextView
+            android:id="@+id/progressBarTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:padding="8dp"
+            android:text="Encienda los equipos y presione Buscar"
+            android:textSize="18sp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/demoTitle"
+            tools:layout_conversion_wrapHeight="105"
+            tools:layout_conversion_wrapWidth="341" />
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="@android:style/Widget.Holo.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:indeterminate="true"
+            android:padding="8dp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/progressBarTitle"
+            tools:layout_conversion_wrapHeight="84"
+            tools:layout_conversion_wrapWidth="1080" />
+
+        <View
+            android:id="@+id/separator"
+            android:layout_width="match_parent"
+            android:layout_height="1dip"
+            android:background="#eeeeee"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/progressBar"
+            tools:layout_conversion_wrapHeight="3"
+            tools:layout_conversion_wrapWidth="1080" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/ipView"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginTop="1dp"
+            android:visibility="gone"
+            android:elevation="8dp"
+            android:background="@android:color/white"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/progressBar" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/pointView"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginTop="1dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@+id/deviceList"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/progressBar" />
+
+        <ListView
+            android:id="@+id/deviceList"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginBottom="15dp"
+            android:background="#F0EDED"
+            android:visibility="visible"
+            app:layout_constraintBottom_toTopOf="@+id/statusText"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/pointView"/>
+
+
+        <Button
+            android:id="@+id/btnSearch"
+            android:layout_width="wrap_content"
+            android:layout_height="59dp"
+            android:layout_marginEnd="1dp"
+            android:layout_marginBottom="6dp"
+            android:background="#3D5970"
+            android:onClick="onSearchClick"
+            android:paddingLeft="10sp"
+            android:paddingRight="4sp"
+            android:text="Buscar Equipos"
+            app:autoSizeMaxTextSize="21dp"
+            app:autoSizeMinTextSize="15dp"
+            app:autoSizeTextType="uniform"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/btnOpen"
+            app:layout_constraintTop_toBottomOf="@+id/separator2"
+            tools:layout_conversion_wrapHeight="155" />
+
+        <Button
+            android:id="@+id/btnOpen"
+            android:layout_width="wrap_content"
+            android:layout_height="59dp"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:layout_marginBottom="6dp"
+            android:background="#3D5970"
+            android:enabled="false"
+            android:longClickable="true"
+            android:onClick="onOpenClick"
+            android:paddingLeft="4sp"
+            android:paddingRight="4sp"
+            android:text="x"
+            android:textSize="15sp"
+            app:autoSizeMaxTextSize="21dp"
+            app:autoSizeMinTextSize="15dp"
+            app:autoSizeTextType="uniform"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/btnSearch"
+            app:layout_constraintStart_toEndOf="@+id/btnConnect"
+            app:layout_constraintTop_toBottomOf="@+id/separator2"
+            tools:layout_conversion_wrapHeight="155"
+            tools:visibility="invisible" />
+
+        <Button
+            android:id="@+id/btnConnect"
+            android:layout_width="0dp"
+            android:layout_height="59dp"
+            android:layout_marginStart="1dp"
+            android:layout_marginBottom="6dp"
+            android:background="#3D5970"
+            android:enabled="false"
+            android:maxLines="1"
+            android:onClick="onConnectClick"
+            android:paddingLeft="2dp"
+            android:paddingRight="2dp"
+            android:text="DESCONECTAR"
+            app:autoSizeMaxTextSize="21dp"
+            app:autoSizeMinTextSize="15dp"
+            app:autoSizeTextType="uniform"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/btnOpen"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/separator2"
+            tools:layout_conversion_wrapHeight="155" />
+
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="1dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="16dp"
+            android:maxLines="3"
+            android:text="dfdsf"
+            android:textSize="20dp"
+            android:textStyle="bold"
+            app:autoSizeMaxTextSize="24dp"
+            app:autoSizeMinTextSize="20dp"
+            app:autoSizeTextType="uniform"
+            app:layout_constraintBottom_toTopOf="@+id/separator2"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/deviceList" />
+
+        <View
+            android:id="@+id/separator2"
+            android:layout_width="match_parent"
+            android:layout_height="1dip"
+            android:background="#eeeeee"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/statusText"
+            app:layout_constraintBottom_toTopOf="@+id/btnOpen"
+            tools:layout_conversion_wrapHeight="3"
+            tools:layout_conversion_wrapWidth="1080" />
+
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</FrameLayout>
