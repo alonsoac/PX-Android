@@ -134,12 +134,8 @@ public class fragEnlaces extends Fragment {
             @Override
             public void onClick(View v) {
                 List<NMEAParser.SatelliteSignal> snapshot = NMEAParser.getSatelliteSignalsSnapshot();
-                signalsBarAdapter.submitSignals(snapshot);
-
-                if (signalsBarAdapter.isEmpty()) {
-                    messagesView.setVisibility(View.VISIBLE);
-                    signalsChartView.setVisibility(View.GONE);
-                    messagesView.setText("Sin señales disponibles");
+                boolean updated = signalsBarAdapter.submitSignals(snapshot);
+                if (!updated) {
                     return;
                 }
 

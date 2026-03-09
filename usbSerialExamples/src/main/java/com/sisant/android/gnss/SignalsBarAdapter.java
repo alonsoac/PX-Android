@@ -14,8 +14,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class SignalsBarAdapter extends RecyclerView.Adapter<SignalsBarAdapter.SignalViewHolder> {
 
@@ -50,20 +52,19 @@ public class SignalsBarAdapter extends RecyclerView.Adapter<SignalsBarAdapter.Si
     static class SignalViewHolder extends RecyclerView.ViewHolder {
         final View signalBar;
         final FrameLayout barArea;
-        final TextView satelliteLabel;
         final TextView signalPowerLabel;
 
         SignalViewHolder(@NonNull View itemView) {
             super(itemView);
             signalBar = itemView.findViewById(R.id.signalBar);
             barArea = itemView.findViewById(R.id.barArea);
-            satelliteLabel = itemView.findViewById(R.id.satelliteLabel);
             signalPowerLabel = itemView.findViewById(R.id.signalPowerLabel);
         }
     }
 
-    public void submitSignals(List<NMEAParser.SatelliteSignal> sourceSignals) {
+    public boolean submitSignals(List<NMEAParser.SatelliteSignal> sourceSignals) {
         List<DisplaySignal> filtered = new ArrayList<DisplaySignal>();
+        Set<String> constellations = new HashSet<String>();
         if (sourceSignals != null) {
             for (NMEAParser.SatelliteSignal sat : sourceSignals) {
                 if (sat == null || sat.signalPowerByBand == null) {
@@ -82,7 +83,12 @@ public class SignalsBarAdapter extends RecyclerView.Adapter<SignalsBarAdapter.Si
                     continue;
                 }
                 filtered.add(new DisplaySignal(sat.constellation, sat.satelliteId, power));
+                constellations.add(sat.constellation);
             }
+        }
+
+        if (filtered.size() < 5 || constellations.size() <= 1) {
+            return false;
         }
 
         Collections.sort(filtered, new Comparator<DisplaySignal>() {
@@ -97,6 +103,7 @@ public class SignalsBarAdapter extends RecyclerView.Adapter<SignalsBarAdapter.Si
         signals.clear();
         signals.addAll(filtered);
         notifyDataSetChanged();
+        return true;
     }
 
     @NonNull
@@ -111,7 +118,6 @@ public class SignalsBarAdapter extends RecyclerView.Adapter<SignalsBarAdapter.Si
         DisplaySignal signal = signals.get(position);
         holder.signalBar.setBackgroundColor(colorForConstellation(signal.constellation));
         holder.signalPowerLabel.setText(String.valueOf(signal.signalPower));
-        holder.satelliteLabel.setText(shortPrefix(signal.constellation) + signal.satelliteId);
 
         int barAreaHeight = holder.barArea.getHeight();
         if (barAreaHeight <= 0) {
@@ -138,14 +144,6 @@ public class SignalsBarAdapter extends RecyclerView.Adapter<SignalsBarAdapter.Si
     private static int orderForConstellation(String constellation) {
         Integer order = CONSTELLATION_ORDER.get(constellation);
         return order == null ? CONSTELLATION_ORDER.get("UNKNOWN") : order;
-    }
-
-    private static String shortPrefix(String constellation) {
-        if ("GPS".equals(constellation)) return "G";
-        if ("GLONASS".equals(constellation)) return "R";
-        if ("GALILEO".equals(constellation)) return "E";
-        if ("BEIDOU".equals(constellation)) return "B";
-        return "U";
     }
 
     private static int colorForConstellation(String constellation) {
