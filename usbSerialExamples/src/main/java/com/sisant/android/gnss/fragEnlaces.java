@@ -12,6 +12,10 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.NavOptions;
 import androidx.navigation.Navigation;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.List;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -67,6 +71,11 @@ public class fragEnlaces extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View root =  inflater.inflate(R.layout.fragment_enlaces, container, false);
+        final EditText messagesView = root.findViewById(R.id.editTextMensajes);
+        final RecyclerView signalsChartView = root.findViewById(R.id.signalsChartView);
+        final SignalsBarAdapter signalsBarAdapter = new SignalsBarAdapter();
+        signalsChartView.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
+        signalsChartView.setAdapter(signalsBarAdapter);
 
         ((Button) root.findViewById(R.id.enlacePXGNSSCOM)).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -90,10 +99,11 @@ public class fragEnlaces extends Fragment {
         ((Button) root.findViewById(R.id.enlaceMENSAJES)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                EditText editText = (EditText) root.findViewById(R.id.editTextMensajes);
-                editText.setText(Log.getLog());
+                messagesView.setVisibility(View.VISIBLE);
+                signalsChartView.setVisibility(View.GONE);
+                messagesView.setText(Log.getLog());
                 // Set the cursor at the end of the text, which will scroll the EditText to the bottom
-                editText.setSelection(editText.getText().length());
+                messagesView.setSelection(messagesView.getText().length());
 
             }
         });
@@ -103,7 +113,9 @@ public class fragEnlaces extends Fragment {
                 String msg = "HAS activado";
                 if(!MainActivity.mainServiceController.setHas(true))
                     msg = "Error al activar";
-                ((EditText)root.findViewById(R.id.editTextMensajes)).setText(msg);
+                messagesView.setVisibility(View.VISIBLE);
+                signalsChartView.setVisibility(View.GONE);
+                messagesView.setText(msg);
 
             }
         });
@@ -121,13 +133,21 @@ public class fragEnlaces extends Fragment {
         ((Button) root.findViewById(R.id.enlaceSEÑALES)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(NMEAParser.GSV==null) return;
-                String s="";
-                for(int i=0;i<NMEAParser.GSV.length;i++) {
-                    if(NMEAParser.GSV[i]!=null)
-                        s+=NMEAParser.GSV[i]+"\n";
+                List<NMEAParser.SatelliteSignal> snapshot = NMEAParser.getSatelliteSignalsSnapshot();
+                boolean updated = signalsBarAdapter.submitSignals(snapshot);
+                if (!updated) {
+                    return;
                 }
-                ((EditText)root.findViewById(R.id.editTextMensajes)).setText(s);
+
+                if (signalsBarAdapter.isEmpty()) {
+                    messagesView.setVisibility(View.VISIBLE);
+                    signalsChartView.setVisibility(View.GONE);
+                    messagesView.setText("Sin señales disponibles");
+                    return;
+                }
+
+                messagesView.setVisibility(View.GONE);
+                signalsChartView.setVisibility(View.VISIBLE);
 
             }
         });
