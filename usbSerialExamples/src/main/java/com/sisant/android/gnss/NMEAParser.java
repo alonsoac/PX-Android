@@ -12,9 +12,13 @@ import android.util.Log;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.TimeZone;
 
 
@@ -27,6 +31,31 @@ public class NMEAParser {
     GPSPosition position;
     private boolean supportsGPGNS=false;
     static String[] GSV;
+    private static final Object SATELLITE_SIGNALS_LOCK = new Object();
+    private static final Map<String, MutableSatelliteSignal> satelliteSignalsCurrentEpoch = new LinkedHashMap<String, MutableSatelliteSignal>();
+    private static List<SatelliteSignal> satelliteSignalsLastCompletedSnapshot = Collections.emptyList();
+    private static final Map<String, Integer> currentEpochExpectedPackets = new HashMap<String, Integer>();
+
+    public static final class SatelliteSignal {
+        public final String constellation;
+        public final int satelliteId;
+        public final int elevation;
+        public final Map<String, Integer> signalPowerByBand;
+
+        public SatelliteSignal(String constellation, int satelliteId, int elevation, Map<String, Integer> signalPowerByBand) {
+            this.constellation = constellation;
+            this.satelliteId = satelliteId;
+            this.elevation = elevation;
+            this.signalPowerByBand = signalPowerByBand;
+        }
+    }
+
+    private static final class MutableSatelliteSignal {
+        String constellation;
+        int satelliteId;
+        int elevation;
+        final Map<String, Integer> signalPowerByBand = new LinkedHashMap<String, Integer>();
+    }
 
     private static final Map<String, SentenceParser> sentenceParsers = new HashMap<String, SentenceParser>();
 
@@ -121,27 +150,24 @@ public class NMEAParser {
             //en todos los casos si la señal es menor a 3 entonces es la L1 y si es mayor o igual a 3 es la L2
             //se mete la L1 en el primer string y L2 en el siguiente
             //ojo en UM soportan un indicador de tipo de señal GBGSV,1,1,01,12,23,277,20,B*36
-            int stringNum=0;
-            if(tokens[0].contains("GL")) stringNum=2;
-            if(tokens[0].contains("GA")) stringNum=4;
-            if(tokens[0].contains("GB")) stringNum=6;
-            int sigId = 0;
-            try {
-                sigId = Integer.parseInt(tokens[tokens.length-2].substring(0,1));
-            } catch(NumberFormatException e) {
-                return true;//aveces no es numérico
-            }
+            String constellation = normalizeConstellation(tokens[0]);
+            int stringNum = gsvStringOffsetForConstellation(constellation);
+            int sigId = parseSignalId(tokens);
             if(sigId==0) return true; //la linea sin sigid se ignora
             if(sigId>2) stringNum++; //si es >2 es la L2   Esto es solo en glonas, en otras la 3 es L1 o no aplica el concepto
+            String signalBand = signalBandForId(sigId);
             if(tokens[2].equals("1")) GSV[stringNum]=""; //si es la pag 1 resetear el string
+            updateSatelliteEpochMetadata(constellation, signalBand, safeParseInt(tokens[1], 0), safeParseInt(tokens[2], 0));
             //ahora por cada sat agregar el dato
             for(int i=0;i<4;i++) { //4 porque son máximo 4 por linea, pero hay que ver si realmente vienen 4
                 int j =  4+i*4;
                 if(j+3>tokens.length-1) break;
-                int satId = Integer.parseInt(tokens[j]);
+                int satId = safeParseInt(tokens[j], -1);
+                if(satId < 0) continue;
                 if(tokens[0].contains("GL")) satId-=64;//esto es para pasarlo de NMEA id a Rn, los demás parece que no lo necesitan porque ya viene bien excepto Beidou que es extraño y no me interesa
-                int elev = Integer.parseInt(tokens[j+1]);
-                int pot = Integer.parseInt(tokens[j+3]);
+                int elev = safeParseInt(tokens[j+1], 0);
+                int pot = safeParseInt(tokens[j+3], 0);
+                addSatelliteSignal(constellation, satId, pot, elev, signalBand);
                 if(elev > 15) {
                     GSV[stringNum]+= tokens[0].substring(0,2)+  satId+" "+elev+"º "+pot+" ";
                 }
@@ -150,6 +176,110 @@ public class NMEAParser {
 
             return true;
         }
+    }
+
+    private static void updateSatelliteEpochMetadata(String constellation, String signalBand, int totalMessages, int messageNumber) {
+        String key = constellation + "|" + signalBand;
+        synchronized (SATELLITE_SIGNALS_LOCK) {
+            if (messageNumber == 1 && !satelliteSignalsCurrentEpoch.isEmpty() && currentEpochExpectedPackets.containsKey(key)) {
+                satelliteSignalsLastCompletedSnapshot = buildSnapshotLocked();
+                Log.d(TAG, buildSnapshotDebugMessageLocked(satelliteSignalsLastCompletedSnapshot));
+                satelliteSignalsCurrentEpoch.clear();
+                currentEpochExpectedPackets.clear();
+            }
+            if (totalMessages > 0) {
+                currentEpochExpectedPackets.put(key, totalMessages);
+            }
+        }
+    }
+
+    private static void addSatelliteSignal(String constellation, int satelliteId, int signalPower, int elevation, String signalBand) {
+        String key = constellation + "|" + satelliteId;
+        synchronized (SATELLITE_SIGNALS_LOCK) {
+            MutableSatelliteSignal signal = satelliteSignalsCurrentEpoch.get(key);
+            if (signal == null) {
+                signal = new MutableSatelliteSignal();
+                signal.constellation = constellation;
+                signal.satelliteId = satelliteId;
+                satelliteSignalsCurrentEpoch.put(key, signal);
+            }
+            signal.elevation = elevation;
+            signal.signalPowerByBand.put(signalBand, signalPower);
+        }
+    }
+
+    private static List<SatelliteSignal> buildSnapshotLocked() {
+        ArrayList<SatelliteSignal> snapshot = new ArrayList<SatelliteSignal>();
+        for (MutableSatelliteSignal mutableSignal : satelliteSignalsCurrentEpoch.values()) {
+            Map<String, Integer> bands = Collections.unmodifiableMap(new LinkedHashMap<String, Integer>(mutableSignal.signalPowerByBand));
+            snapshot.add(new SatelliteSignal(mutableSignal.constellation, mutableSignal.satelliteId, mutableSignal.elevation, bands));
+        }
+        return Collections.unmodifiableList(snapshot);
+    }
+
+    private static String buildSnapshotDebugMessageLocked(List<SatelliteSignal> snapshot) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("GSV snapshot complete: sats=").append(snapshot.size()).append(" [");
+        for (int i = 0; i < snapshot.size(); i++) {
+            SatelliteSignal sat = snapshot.get(i);
+            if (i > 0) sb.append("; ");
+            sb.append(sat.constellation)
+              .append(":")
+              .append(sat.satelliteId)
+              .append("@").append(sat.elevation)
+              .append("{");
+            boolean firstBand = true;
+            for (Map.Entry<String, Integer> entry : sat.signalPowerByBand.entrySet()) {
+                if (!firstBand) sb.append(",");
+                sb.append(entry.getKey()).append("=").append(entry.getValue());
+                firstBand = false;
+            }
+            sb.append("}");
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    public static List<SatelliteSignal> getSatelliteSignalsSnapshot() {
+        synchronized (SATELLITE_SIGNALS_LOCK) {
+            return Collections.unmodifiableList(new ArrayList<SatelliteSignal>(satelliteSignalsLastCompletedSnapshot));
+        }
+    }
+
+    private static int parseSignalId(String[] tokens) {
+        if (tokens == null || tokens.length < 2) return 0;
+        String token = tokens[tokens.length - 2];
+        if (token.length() == 0) return 0;
+        return safeParseInt(token.substring(0, 1), 0);
+    }
+
+    private static int safeParseInt(String value, int fallback) {
+        try {
+            return Integer.parseInt(value);
+        } catch (Exception e) {
+            return fallback;
+        }
+    }
+
+    private static String normalizeConstellation(String sentenceType) {
+        if (sentenceType == null || sentenceType.length() < 2) return "UNKNOWN";
+        String prefix = sentenceType.substring(0, 2);
+        if ("GP".equals(prefix)) return "GPS";
+        if ("GL".equals(prefix)) return "GLONASS";
+        if ("GA".equals(prefix)) return "GALILEO";
+        if ("GB".equals(prefix)) return "BEIDOU";
+        return "UNKNOWN";
+    }
+
+    private static int gsvStringOffsetForConstellation(String constellation) {
+        if ("GLONASS".equals(constellation)) return 2;
+        if ("GALILEO".equals(constellation)) return 4;
+        if ("BEIDOU".equals(constellation)) return 6;
+        return 0;
+    }
+
+    private static String signalBandForId(int signalId) {
+        return signalId > 2 ? "L2" : "L1";
     }
 
     class GNGSA implements SentenceParser {
