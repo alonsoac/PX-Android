@@ -641,7 +641,7 @@ public class GNSSDevice {
         if (this.MAC.equals("00:14:03:05:0A:0A") || this.MAC.equals("00:14:03:05:0A:00"))
             (calendar = Calendar.getInstance()).set(2026, abr, 16, 0, 0, 0);
 
-     //Luis murillo  LAM
+     //Luis murillo .. LAM
         if (this.MAC.equals("00:14:03:05:0A:D7") || this.MAC.equals("00:14:03:05:0A:EB"))
             (calendar = Calendar.getInstance()).set(2026, abr, 16, 0, 0, 0);
 
