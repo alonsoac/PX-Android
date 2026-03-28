@@ -3,8 +3,8 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 35
     defaultConfig {
-        versionCode 236
-        versionName '24.24'
+        versionCode 239
+        versionName '24.27'
 
         minSdkVersion 23
         targetSdk 35

@@ -280,6 +280,8 @@ public class GNSSDevice {
                 if (btdev.name.equals("PX GNSS Rover JBA")) btdev.name = "PX GNSS Base JBA";
                 if (btdev.name.equals("PX GNSS Rover 5W")) btdev.name = "PX GNSS Base MER";
                 if (btdev.name.equals("PX GNSS Rover 6")) btdev.name = "PX GNSS Base 6";
+                if (btdev.name.equals("PX GNSS Rover 8M")) btdev.name = "PX GNSS Base 8M";
+                if (btdev.MAC.equals("98:D3:31:FD:AF:67")) btdev.name = "PX GNSS Base RM";
                 if (btdev.MAC.equals("98:D3:31:FD:AF:67")) btdev.name = "PX GNSS Base RM";
                 if (btdev.MAC.equals("00:14:03:05:0C:A1")) btdev.name = "PX GNSS Rover PXA";//rover panameño brelly dice rover MQ
 
@@ -548,6 +550,8 @@ public class GNSSDevice {
         if (this.MAC.equals("00:14:03:05:0A:0A") || this.MAC.equals("00:14:03:05:0A:00")) return CMD_TYPE_UM; //PG7
         if (this.MAC.equals("00:14:03:05:0A:D7")) return CMD_TYPE_UM; //rover LAM
         if (this.MAC.equals("00:14:03:05:0A:3C")) return CMD_TYPE_UM; //rover JBA2
+        if (this.MAC.equals("00:14:03:05:0A:35")) return CMD_TYPE_UM; //rover 8M2
+        if (this.MAC.equals("00:14:03:05:0A:71")) return CMD_TYPE_UM; //rover JC9
 
 
         return CMD_TYPE_UBX;
@@ -606,6 +610,7 @@ public class GNSSDevice {
         if (this.MAC.equals("00:14:03:05:0A:0A")) return true; //BASE PG7
         if (this.MAC.equals("00:14:03:05:0A:EB")) return true; //BASE LAM
         if (this.MAC.equals("00:14:03:05:0F:A4")) return true; //BASE jose badilla (se reporta como rover JBA)
+        if (this.MAC.equals("98:D3:31:F4:B6:62")) return true; //BASE 8M
 
 
        // if (this.MAC.equals("98:D3:71:FE:9D:EF")) return true; // rprueba
@@ -631,6 +636,7 @@ public class GNSSDevice {
             (calendar = Calendar.getInstance()).set(2026, abr, 28, 0, 0, 0);//ROVER APX1
 
         //CLIENTES CREDITO PENDIENTES ///////////////////
+        //Carlos barrantes pero no se programó como crédito el chip Rover 8M2
 
         //EOZ
         if (this.MAC.equals("00:14:03:05:0A:23"))
@@ -674,9 +680,7 @@ public class GNSSDevice {
         if (this.MAC.equals("00:14:03:05:06:93") || this.MAC.equals("00:14:03:05:06:6D"))
             (calendar = Calendar.getInstance()).set(2026, abr, 16, 0, 0, 0);
 
-        //esto qué es ???
-        if (this.MAC.equals("00:14:03:05:0A:F5") || this.MAC.equals("00:14:03:05:06:6C"))
-            (calendar = Calendar.getInstance()).set(2026, feb, 27, 0, 0, 0);
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -696,7 +700,9 @@ public class GNSSDevice {
         //Carlos Mora
         if (this.MAC.equals("00:14:03:05:0D:1C") || this.MAC.equals("00:14:03:05:0A:81")) //CMC
             (calendar = Calendar.getInstance()).set(2055, ene, 27, 0, 0, 0);
-
+        //Base JLI
+        if (this.MAC.equals("00:14:03:05:0A:F5") || this.MAC.equals("00:14:03:05:06:6C"))
+            (calendar = Calendar.getInstance()).set(2055, feb, 27, 0, 0, 0);
 
         //Carlos gutierrez
         if (this.MAC.equals("00:14:03:05:0C:92"))
