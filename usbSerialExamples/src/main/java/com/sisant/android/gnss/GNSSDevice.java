@@ -551,7 +551,7 @@ public class GNSSDevice {
         if (this.MAC.equals("00:14:03:05:0A:D7")) return CMD_TYPE_UM; //rover LAM
         if (this.MAC.equals("00:14:03:05:0A:3C")) return CMD_TYPE_UM; //rover JBA2
         if (this.MAC.equals("00:14:03:05:0A:35")) return CMD_TYPE_UM; //rover 8M2
-        if (this.MAC.equals("00:14:03:05:0A:71")) return CMD_TYPE_UM; //rover JC9
+        if (this.MAC.equals("00:14:03:05:0A:e4")) return CMD_TYPE_UM; //rover JC9
 
 
         return CMD_TYPE_UBX;
@@ -623,68 +623,75 @@ public class GNSSDevice {
         Calendar calendar = null;
 
         //OJO el mes es 0 para enero
-        //Base PBX
+        //Base PBX negra
         if (this.MAC.equals("00:14:03:05:0D:83"))
-            (calendar = Calendar.getInstance()).set(2026, abr, 20, 0, 0, 0);
+            (calendar = Calendar.getInstance()).set(2026, abr, 23, 0, 0, 0);
 
-        //ROVER UM01 PX this.MAC.equals("00:14:03:05:0D:CA"
+        //ROVER UM01 PX this.MAC.equals("00:14:03:05:0D:CA". OJO no es UM, es ublox
         if (this.MAC.equals("00:14:03:05:0D:CA"))
-             (calendar = Calendar.getInstance()).set(2026, abr, 20, 0, 0, 0);
+             (calendar = Calendar.getInstance()).set(2026, abr, 23, 0, 0, 0);
         if (this.MAC.equals("00:14:03:05:0A:C2"))
             (calendar = Calendar.getInstance()).set(2026, abr, 23, 0, 0, 0);//BASE APX1
         if (this.MAC.equals("00:14:03:05:0A:D8"))
-            (calendar = Calendar.getInstance()).set(2026, abr, 28, 0, 0, 0);//ROVER APX1
+            (calendar = Calendar.getInstance()).set(2026, abr, 23, 0, 0, 0);//ROVER APX1
 
         //CLIENTES CREDITO PENDIENTES ///////////////////
         //Carlos barrantes pero no se programó como crédito el chip Rover 8M2
 
-        //EOZ
+        //ATRASADOS
+
+        //Eddy orozco
         if (this.MAC.equals("00:14:03:05:0A:23"))
-            (calendar = Calendar.getInstance()).set(2026, abr, 16, 0, 0, 0);
+            (calendar = Calendar.getInstance()).set(2026, jun, 16, 0, 0, 0);
 
 
+
+        ////CRDITOS AL DIA
      //Pablo Gonzalez
         if (this.MAC.equals("00:14:03:05:0A:0A") || this.MAC.equals("00:14:03:05:0A:00"))
-            (calendar = Calendar.getInstance()).set(2026, abr, 16, 0, 0, 0);
+            (calendar = Calendar.getInstance()).set(2026, jun, 16, 0, 0, 0);
 
-     //Luis murillo .. LAM
-        if (this.MAC.equals("00:14:03:05:0A:D7") || this.MAC.equals("00:14:03:05:0A:EB"))
-            (calendar = Calendar.getInstance()).set(2026, abr, 16, 0, 0, 0);
 
 
         //ESTer
         if (this.MAC.equals("00:14:03:05:0A:2D") || this.MAC.equals("00:14:03:05:0A:48"))
-            (calendar = Calendar.getInstance()).set(2026, abr, 16, 0, 0, 0);
+            (calendar = Calendar.getInstance()).set(2026, jun, 16, 0, 0, 0);
 
-        //ATRASADOS
 
-        ////CRDITOS AL DIA
 
         //WIR william rodriguez
         if (this.MAC.equals("00:14:03:05:0A:0F") || this.MAC.equals("00:14:03:05:0A:52"))
-            (calendar = Calendar.getInstance()).set(2026, abr, 16, 0, 0, 0);
+            (calendar = Calendar.getInstance()).set(2026, jun, 16, 0, 0, 0);
 
 
         //Guillermo morales
 
         if (this.MAC.equals("00:14:03:05:06:80")) //Base GM3
-            (calendar = Calendar.getInstance()).set(2026, abr, 16, 0, 0, 0);
+            (calendar = Calendar.getInstance()).set(2026, jun, 16, 0, 0, 0);
 
 
-        //Gustavo Adolfo Arce (tavo topo) NO HA RETIRADO EL EQUIPO
+        //Fyfes
         if (this.MAC.equals("00:14:03:05:06:62") || this.MAC.equals("00:14:03:05:06:71")) //GA9
-            (calendar = Calendar.getInstance()).set(2026, mar, 27, 0, 0, 0);
+            (calendar = Calendar.getInstance()).set(2026, jun, 16, 0, 0, 0);
 
 
-        //yoseth  YTH base rover
-        if (this.MAC.equals("00:14:03:05:06:93") || this.MAC.equals("00:14:03:05:06:6D"))
-            (calendar = Calendar.getInstance()).set(2026, abr, 16, 0, 0, 0);
 
 
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        //yoseth  YTH base rover
+        if (this.MAC.equals("00:14:03:05:06:93") || this.MAC.equals("00:14:03:05:06:6D"))
+            (calendar = Calendar.getInstance()).set(2055, abr, 16, 0, 0, 0);
+
+        //Luis murillo .. LAM
+        if (this.MAC.equals("00:14:03:05:0A:D7") || this.MAC.equals("00:14:03:05:0A:EB"))
+            (calendar = Calendar.getInstance()).set(2055, abr, 16, 0, 0, 0);
+
+//--
+
         //Jose Badilla
 
         if (this.MAC.equals("00:14:03:05:0A:3C"))
