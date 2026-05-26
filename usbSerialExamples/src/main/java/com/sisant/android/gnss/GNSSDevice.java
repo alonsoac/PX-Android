@@ -547,7 +547,11 @@ public class GNSSDevice {
         if (this.MAC.equals("00:14:03:05:0A:23")) return CMD_TYPE_UM; //Rover EOZ
         if (this.MAC.equals("00:14:03:05:0A:0F") || this.MAC.equals("00:14:03:05:0A:52")) return CMD_TYPE_UM; //WIR
         if (this.MAC.equals("00:14:03:05:0A:2D") || this.MAC.equals("00:14:03:05:0A:48")) return CMD_TYPE_UM; //EST
-        if (this.MAC.equals("00:14:03:05:0A:0A") || this.MAC.equals("00:14:03:05:0A:00")) return CMD_TYPE_UM; //PG7
+        if(this.name.contains("PG7")) {
+            //00:14:03:05:0A:00 también lo tiene Marchena pero no es UM
+            if (this.MAC.equals("00:14:03:05:0A:0A") || this.MAC.equals("00:14:03:05:0A:00"))
+                return CMD_TYPE_UM; //PG7
+        }
         if (this.MAC.equals("00:14:03:05:0A:D7")) return CMD_TYPE_UM; //rover LAM
         if (this.MAC.equals("00:14:03:05:0A:3C")) return CMD_TYPE_UM; //rover JBA2
         if (this.MAC.equals("00:14:03:05:0A:35")) return CMD_TYPE_UM; //rover 8M2
@@ -625,15 +629,15 @@ public class GNSSDevice {
         //OJO el mes es 0 para enero
         //Base PBX negra
         if (this.MAC.equals("00:14:03:05:0D:83"))
-            (calendar = Calendar.getInstance()).set(2026, may, 6, 0, 0, 0);
+            (calendar = Calendar.getInstance()).set(2026, jun, 6, 0, 0, 0);
 
         //ROVER UM01 PX this.MAC.equals("00:14:03:05:0D:CA". OJO no es UM, es ublox
         if (this.MAC.equals("00:14:03:05:0D:CA"))
-             (calendar = Calendar.getInstance()).set(2026, may, 6, 0, 0, 0);
+             (calendar = Calendar.getInstance()).set(2026, jun, 6, 0, 0, 0);
         if (this.MAC.equals("00:14:03:05:0A:C2"))
-            (calendar = Calendar.getInstance()).set(2026, may, 6, 0, 0, 0);//BASE APX1
+            (calendar = Calendar.getInstance()).set(2026, jun, 6, 0, 0, 0);//BASE APX1
         if (this.MAC.equals("00:14:03:05:0A:D8"))
-            (calendar = Calendar.getInstance()).set(2026, may, 6, 0, 0, 0);//ROVER APX1
+            (calendar = Calendar.getInstance()).set(2026, jun, 6, 0, 0, 0);//ROVER APX1
 
         //CLIENTES CREDITO PENDIENTES ///////////////////
         //Carlos barrantes pero no se programó como crédito el chip Rover 8M2
@@ -648,8 +652,10 @@ public class GNSSDevice {
 
         ////CRDITOS AL DIA
      //Pablo Gonzalez
-        if (this.MAC.equals("00:14:03:05:0A:0A") || this.MAC.equals("00:14:03:05:0A:00"))
-            (calendar = Calendar.getInstance()).set(2026, jun, 16, 0, 0, 0);
+        if(this.name.contains("PG7")) { //el 00:14:03:05:0A:00 también lo tiene Marchena
+            if (this.MAC.equals("00:14:03:05:0A:0A") || this.MAC.equals("00:14:03:05:0A:00"))
+                (calendar = Calendar.getInstance()).set(2026, jun, 16, 0, 0, 0);
+        }
 
 
 

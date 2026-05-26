@@ -1333,7 +1333,7 @@ public class MainActivity extends PBXActivity {
 
                 //primero ver si hay algo emparejado
                 Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
-                if (pairedDevices.size() > 0) {
+                if (!pairedDevices.isEmpty()) {
                     Log.e(TAG, "hay devices BT emparejados");
                     // ver si la mac corresponde y de ser así entonces estaría listo para usarse
                     for (BluetoothDevice device : pairedDevices) {
