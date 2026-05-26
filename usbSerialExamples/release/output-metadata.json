@@ -11,9 +11,9 @@
       "type": "SINGLE",
       "filters": [],
       "attributes": [],
-      "versionCode": 236,
-      "versionName": "24.24",
-      "outputFile": "PX-Conectar-24.24.apk"
+      "versionCode": 241,
+      "versionName": "24.29",
+      "outputFile": "PX-Conectar-24.29.apk"
     }
   ],
   "elementType": "File",
@@ -22,14 +22,14 @@
       "minApi": 28,
       "maxApi": 30,
       "baselineProfiles": [
-        "baselineProfiles/1/PX-Conectar-24.24.dm"
+        "baselineProfiles/1/PX-Conectar-24.29.dm"
       ]
     },
     {
       "minApi": 31,
       "maxApi": 2147483647,
       "baselineProfiles": [
-        "baselineProfiles/0/PX-Conectar-24.24.dm"
+        "baselineProfiles/0/PX-Conectar-24.29.dm"
       ]
     }
   ],
