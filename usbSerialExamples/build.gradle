@@ -19,7 +19,7 @@ android {
         release {
             minifyEnabled true
             //https://github.com/orbisgis/cts/wiki/6.-Android-troubleshooting
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
     lint {
