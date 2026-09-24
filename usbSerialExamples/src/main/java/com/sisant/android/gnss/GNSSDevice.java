@@ -638,15 +638,15 @@ public class GNSSDevice {
         //OJO el mes es 0 para enero
         //Base PBX negra
         if (this.MAC.equals("00:14:03:05:0D:83"))
-            (calendar = Calendar.getInstance()).set(2026, set, 26, 0, 0, 0);
+            (calendar = Calendar.getInstance()).set(2026, oct, 26, 0, 0, 0);
 
         //ROVER UM01 PX this.MAC.equals("00:14:03:05:0D:CA". OJO no es UM, es ublox
         if (this.MAC.equals("00:14:03:05:0D:CA"))
-             (calendar = Calendar.getInstance()).set(2026, set, 26, 0, 0, 0);
+             (calendar = Calendar.getInstance()).set(2026, oct, 26, 0, 0, 0);
         if (this.MAC.equals("00:14:03:05:0A:C2"))
-            (calendar = Calendar.getInstance()).set(2026, set, 26, 0, 0, 0);//BASE APX1
+            (calendar = Calendar.getInstance()).set(2026, oct, 26, 0, 0, 0);//BASE APX1
         if (this.MAC.equals("00:14:03:05:0A:D8"))
-            (calendar = Calendar.getInstance()).set(2026, set, 26, 0, 0, 0);//ROVER APX1
+            (calendar = Calendar.getInstance()).set(2026, oct, 26, 0, 0, 0);//ROVER APX1
 
         //CLIENTES CREDITO PENDIENTES ///////////////////
 
@@ -661,7 +661,7 @@ public class GNSSDevice {
         //MC5
         if(this.name.contains("MC5")) {
             if (this.MAC.equals("00:14:03:05:0A:52") || this.MAC.equals("00:14:03:05:0A:3A"))
-              (calendar = Calendar.getInstance()).set(2026, set, 16, 0, 0, 0);
+              (calendar = Calendar.getInstance()).set(2026, oct, 16, 0, 0, 0);
         }
 
 

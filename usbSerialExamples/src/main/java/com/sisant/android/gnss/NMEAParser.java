@@ -32,9 +32,15 @@ public class NMEAParser {
     private boolean supportsGPGNS=false;
     static String[] GSV;
     private static final Object SATELLITE_SIGNALS_LOCK = new Object();
-    private static final Map<String, MutableSatelliteSignal> satelliteSignalsCurrentEpoch = new LinkedHashMap<String, MutableSatelliteSignal>();
-    private static List<SatelliteSignal> satelliteSignalsLastCompletedSnapshot = Collections.emptyList();
-    private static final Map<String, Integer> currentEpochExpectedPackets = new HashMap<String, Integer>();
+    /*
+     * Los GSV de cada constelacion y banda son secuencias independientes. No se
+     * puede usar la pagina 1 de una de ellas para cerrar y borrar una epoca
+     * global: con eso se publicaban fotos parciales dependiendo del orden de
+     * llegada. Se conserva el ultimo dato de cada satelite y solo se descarta si
+     * deja de actualizarse durante varios ciclos normales de salida NMEA.
+     */
+    private static final long SATELLITE_SIGNAL_MAX_AGE_MS = 10_000L;
+    private static final Map<String, MutableSatelliteSignal> satelliteSignalsCache = new LinkedHashMap<String, MutableSatelliteSignal>();
 
     public static final class SatelliteSignal {
         public final String constellation;
@@ -54,6 +60,7 @@ public class NMEAParser {
         String constellation;
         int satelliteId;
         int elevation;
+        long lastUpdatedElapsedRealtime;
         final Map<String, Integer> signalPowerByBand = new LinkedHashMap<String, Integer>();
     }
 
@@ -157,7 +164,6 @@ public class NMEAParser {
             if(sigId>2) stringNum++; //si es >2 es la L2   Esto es solo en glonas, en otras la 3 es L1 o no aplica el concepto
             String signalBand = signalBandForId(sigId);
             if(tokens[2].equals("1")) GSV[stringNum]=""; //si es la pag 1 resetear el string
-            updateSatelliteEpochMetadata(constellation, signalBand, safeParseInt(tokens[1], 0), safeParseInt(tokens[2], 0));
             //ahora por cada sat agregar el dato
             for(int i=0;i<4;i++) { //4 porque son máximo 4 por linea, pero hay que ver si realmente vienen 4
                 int j =  4+i*4;
@@ -178,41 +184,36 @@ public class NMEAParser {
         }
     }
 
-    private static void updateSatelliteEpochMetadata(String constellation, String signalBand, int totalMessages, int messageNumber) {
-        String key = constellation + "|" + signalBand;
-        synchronized (SATELLITE_SIGNALS_LOCK) {
-            if (messageNumber == 1 && !satelliteSignalsCurrentEpoch.isEmpty() && currentEpochExpectedPackets.containsKey(key)) {
-                satelliteSignalsLastCompletedSnapshot = buildSnapshotLocked();
-                Log.d(TAG, buildSnapshotDebugMessageLocked(satelliteSignalsLastCompletedSnapshot));
-                satelliteSignalsCurrentEpoch.clear();
-                currentEpochExpectedPackets.clear();
-            }
-            if (totalMessages > 0) {
-                currentEpochExpectedPackets.put(key, totalMessages);
-            }
-        }
-    }
-
     private static void addSatelliteSignal(String constellation, int satelliteId, int signalPower, int elevation, String signalBand) {
         String key = constellation + "|" + satelliteId;
         synchronized (SATELLITE_SIGNALS_LOCK) {
-            MutableSatelliteSignal signal = satelliteSignalsCurrentEpoch.get(key);
+            MutableSatelliteSignal signal = satelliteSignalsCache.get(key);
             if (signal == null) {
                 signal = new MutableSatelliteSignal();
                 signal.constellation = constellation;
                 signal.satelliteId = satelliteId;
-                satelliteSignalsCurrentEpoch.put(key, signal);
+                satelliteSignalsCache.put(key, signal);
             }
             signal.elevation = elevation;
             signal.signalPowerByBand.put(signalBand, signalPower);
+            signal.lastUpdatedElapsedRealtime = SystemClock.elapsedRealtime();
         }
     }
 
-    private static List<SatelliteSignal> buildSnapshotLocked() {
+    private static List<SatelliteSignal> buildSnapshotLocked(long now) {
         ArrayList<SatelliteSignal> snapshot = new ArrayList<SatelliteSignal>();
-        for (MutableSatelliteSignal mutableSignal : satelliteSignalsCurrentEpoch.values()) {
+        ArrayList<String> expiredKeys = new ArrayList<String>();
+        for (Map.Entry<String, MutableSatelliteSignal> cacheEntry : satelliteSignalsCache.entrySet()) {
+            MutableSatelliteSignal mutableSignal = cacheEntry.getValue();
+            if (now - mutableSignal.lastUpdatedElapsedRealtime > SATELLITE_SIGNAL_MAX_AGE_MS) {
+                expiredKeys.add(cacheEntry.getKey());
+                continue;
+            }
             Map<String, Integer> bands = Collections.unmodifiableMap(new LinkedHashMap<String, Integer>(mutableSignal.signalPowerByBand));
             snapshot.add(new SatelliteSignal(mutableSignal.constellation, mutableSignal.satelliteId, mutableSignal.elevation, bands));
+        }
+        for (String expiredKey : expiredKeys) {
+            satelliteSignalsCache.remove(expiredKey);
         }
         return Collections.unmodifiableList(snapshot);
     }
@@ -242,7 +243,9 @@ public class NMEAParser {
 
     public static List<SatelliteSignal> getSatelliteSignalsSnapshot() {
         synchronized (SATELLITE_SIGNALS_LOCK) {
-            return Collections.unmodifiableList(new ArrayList<SatelliteSignal>(satelliteSignalsLastCompletedSnapshot));
+            List<SatelliteSignal> snapshot = buildSnapshotLocked(SystemClock.elapsedRealtime());
+            Log.d(TAG, buildSnapshotDebugMessageLocked(snapshot));
+            return snapshot;
         }
     }
 
@@ -455,6 +458,9 @@ public class NMEAParser {
 
     public void clear() {
         position = new GPSPosition();
+        synchronized (SATELLITE_SIGNALS_LOCK) {
+            satelliteSignalsCache.clear();
+        }
     }
 
 

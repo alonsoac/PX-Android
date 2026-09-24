@@ -2,6 +2,8 @@ package com.sisant.android.gnss;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +25,10 @@ import java.util.List;
  * create an instance of this fragment.
  */
 public class fragEnlaces extends Fragment {
+
+    private static final long SIGNALS_REFRESH_INTERVAL_MS = 1_000L;
+    private final Handler signalsRefreshHandler = new Handler(Looper.getMainLooper());
+    private Runnable signalsRefreshRunnable;
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -133,15 +139,9 @@ public class fragEnlaces extends Fragment {
         ((Button) root.findViewById(R.id.enlaceSEÑALES)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                List<NMEAParser.SatelliteSignal> snapshot = NMEAParser.getSatelliteSignalsSnapshot();
-                boolean updated = signalsBarAdapter.submitSignals(snapshot);
-                if (!updated) {
-                    return;
-                }
-
                 messagesView.setVisibility(View.GONE);
                 signalsChartView.setVisibility(View.VISIBLE);
-
+                startSignalsRefresh(signalsBarAdapter);
             }
         });
         ((Button) root.findViewById(R.id.enlacePROMEDIO)).setOnClickListener(new View.OnClickListener() {
@@ -176,5 +176,30 @@ public class fragEnlaces extends Fragment {
         }
 
         return root;
+    }
+
+    private void startSignalsRefresh(final SignalsBarAdapter signalsBarAdapter) {
+        if (signalsRefreshRunnable != null) {
+            signalsRefreshHandler.removeCallbacks(signalsRefreshRunnable);
+        }
+
+        signalsRefreshRunnable = new Runnable() {
+            @Override
+            public void run() {
+                List<NMEAParser.SatelliteSignal> snapshot = NMEAParser.getSatelliteSignalsSnapshot();
+                signalsBarAdapter.submitSignals(snapshot);
+                signalsRefreshHandler.postDelayed(this, SIGNALS_REFRESH_INTERVAL_MS);
+            }
+        };
+        signalsRefreshRunnable.run();
+    }
+
+    @Override
+    public void onDestroyView() {
+        if (signalsRefreshRunnable != null) {
+            signalsRefreshHandler.removeCallbacks(signalsRefreshRunnable);
+            signalsRefreshRunnable = null;
+        }
+        super.onDestroyView();
     }
 }
