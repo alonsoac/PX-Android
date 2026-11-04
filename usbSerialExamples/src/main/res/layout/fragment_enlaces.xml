@@ -52,6 +52,13 @@
             android:layout_height="wrap_content"
             android:text="Agregar por IP" />
 
+        <Button
+            android:id="@+id/enlaceUNICORE"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:text="Consultar CONFIG / MODE" />
+
         <FrameLayout
             android:id="@+id/messagesSignalsContainer"
             android:layout_width="match_parent"

@@ -39,6 +39,7 @@ public class GNSSReader {
     static int lastBytesCnt = 0;
 
     static void streamParser(byte[] buffer) {
+        UnicoreQueryCapture.accept(buffer);
         final int MIN_BYTES = 200;
         //lo que hace es identificar el inicio de los paquetes y según el tipo lo va leyeno hasta el final del paquete o el final del buffer y lo pasa al parser específico del tipo de paquete
         //se usa HDR_CHECK_BYTES bytes para identificar el tipo de paquete. Estos bytes se guardan entre llamados

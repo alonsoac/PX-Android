@@ -36,6 +36,7 @@ abstract public class ServiceController {
     private Timer timer = new Timer();
 
     static Messenger mService = null; //este se usa para enviar mensajes al mainService
+    boolean deviceConnected;
     boolean mIsBound; //indica si está bound (a ambos servicios, ya que no se controla por aparte)
     final Messenger mMessenger = new Messenger(new IncomingHandler()); //este es para recibir mensajes de cualquiera
 
@@ -96,16 +97,19 @@ abstract public class ServiceController {
             Location loc;
             switch (msg.what) {
                 case MainService.MSG_NEED_PHONE_RESET:
+                    deviceConnected = false;
                     ubxPendingSend = null;
                     Utils.getMainActivity().setConnectedDevice(null);
                     onDeviceLost();
                     Utils.getMainActivity().needPhoneReset();
                     break;
                 case MainService.MSG_DEVICE_DISCONNECTED:
+                    deviceConnected = false;
                     ubxPendingSend = null;
                     onDeviceDisconnected();
                     break;
                 case MainService.MSG_DEVICE_CONNECTED:
+                    deviceConnected = true;
                     ubxPendingSend = null;
                     LogMessage("MSG_DEVICE_CONNECTED");
                     onDeviceConnected();
@@ -120,6 +124,7 @@ abstract public class ServiceController {
                     }
                     break;
                 case MainService.MSG_DEVICE_LOST:
+                    deviceConnected = false;
                     ubxPendingSend = null;
                     onDeviceLost();
                     break;
@@ -133,13 +138,15 @@ abstract public class ServiceController {
                     //UpdateLogAppend(append); esto es para implementar otro log en el main activity
                     break;
                 case MainService.MSG_THREAD_SUICIDE:
+                    deviceConnected = false;
                     doUnbindService();
                     activity.stopService(new Intent(activity, MainService.class));
                     LogMessage("Service Stopped");
                     break;
                 case MainService.MSG_UPDATE_POSITION:
                     loc = b.getParcelable("location"); //esto podría ser null si no hay posición
-                    Boolean connected = b.getBoolean("connected"); //esto en true indica que al menos hay NMEA
+                    Boolean connected = b.getBoolean("connected");
+                    deviceConnected = connected; //esto en true indica que al menos hay NMEA
                     //esto es en el main activity para actualizar alguna cosa
                     UpdatePosition(loc, connected);
                     //el mock location lo actualiza el service
@@ -199,6 +206,7 @@ abstract public class ServiceController {
         }
 
         public void onServiceDisconnected(ComponentName className) {
+            deviceConnected = false;
             //ojo que esto normalmente no corre
             Log.e(TAG, "onServiceDisconnected");
             // This is called when the connection with the service has been unexpectedly disconnected - process crashed.
