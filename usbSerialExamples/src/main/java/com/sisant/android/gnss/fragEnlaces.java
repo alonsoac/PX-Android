@@ -29,23 +29,6 @@ public class fragEnlaces extends Fragment {
     private static final long SIGNALS_REFRESH_INTERVAL_MS = 1_000L;
     private final Handler signalsRefreshHandler = new Handler(Looper.getMainLooper());
     private Runnable signalsRefreshRunnable;
-    private final Handler queryHandler = new Handler(Looper.getMainLooper());
-    private Runnable queryRefresh;
-    private boolean querying;
-    private GNSSDevice queryDevice;
-
-    private boolean canQueryUnicore() {
-        return MainActivity.connectedDevice != null
-                && MainActivity.connectedDevice.getCommandMode() == GNSSDevice.CMD_TYPE_UM
-                && MainActivity.mainServiceController != null
-                && MainActivity.mainServiceController.deviceConnected;
-    }
-
-    private void cancelQuery() {
-        querying = false;
-        queryDevice = null;
-        UnicoreQueryCapture.stop();
-    }
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -99,50 +82,6 @@ public class fragEnlaces extends Fragment {
         final SignalsBarAdapter signalsBarAdapter = new SignalsBarAdapter();
         signalsChartView.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
         signalsChartView.setAdapter(signalsBarAdapter);
-        final Button queryButton = root.findViewById(R.id.enlaceUNICORE);
-        queryButton.setOnClickListener(v -> {
-            if (!canQueryUnicore() || querying) return;
-            messagesView.setVisibility(View.VISIBLE);
-            signalsChartView.setVisibility(View.GONE);
-            messagesView.setText("Consultando CONFIG / MODE...\n");
-            queryDevice = MainActivity.connectedDevice;
-            UnicoreQueryCapture.start();
-            querying = true;
-            queryButton.setEnabled(false);
-            if (!MainActivity.mainServiceController.sendUBXtoService(
-                    "CONFIG\r\nMODE\r\n".getBytes(java.nio.charset.StandardCharsets.US_ASCII), false)) {
-                cancelQuery();
-                messagesView.setText("Error al enviar CONFIG / MODE.");
-                queryButton.setEnabled(true);
-            }
-        });
-        queryRefresh = new Runnable() {
-            @Override public void run() {
-                boolean available = canQueryUnicore();
-                queryButton.setVisibility(available ? View.VISIBLE : View.GONE);
-                if (querying) {
-                    String response = UnicoreQueryCapture.text();
-                    String ending = null;
-                    if (!available || MainActivity.connectedDevice != queryDevice) {
-                        ending = "\nConsulta interrumpida: equipo desconectado o cambiado.";
-                    } else if (UnicoreQueryCapture.expired()) {
-                        ending = UnicoreQueryCapture.complete() ? "" :
-                                "\nTiempo de espera agotado: respuesta incompleta o sin respuesta.";
-                    }
-                    if (ending != null) {
-                        cancelQuery();
-                        messagesView.setText(response + ending);
-                    } else {
-                        messagesView.setText("Consultando CONFIG / MODE...\n" + response);
-                    }
-                    messagesView.setSelection(messagesView.getText().length());
-                }
-                queryButton.setEnabled(!querying);
-                queryHandler.postDelayed(this, 250L);
-            }
-        };
-        queryRefresh.run();
-
 
         ((Button) root.findViewById(R.id.enlacePXGNSSCOM)).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -168,7 +107,6 @@ public class fragEnlaces extends Fragment {
             public void onClick(View v) {
                 messagesView.setVisibility(View.VISIBLE);
                 signalsChartView.setVisibility(View.GONE);
-                cancelQuery();
                 messagesView.setText(Log.getLog());
                 // Set the cursor at the end of the text, which will scroll the EditText to the bottom
                 messagesView.setSelection(messagesView.getText().length());
@@ -178,7 +116,6 @@ public class fragEnlaces extends Fragment {
         ((Button) root.findViewById(R.id.enlaceHAS)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                cancelQuery();
                 String msg = "HAS activado";
                 if(!MainActivity.mainServiceController.setHas(true))
                     msg = "Error al activar";
@@ -202,7 +139,6 @@ public class fragEnlaces extends Fragment {
         ((Button) root.findViewById(R.id.enlaceSEÑALES)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                cancelQuery();
                 messagesView.setVisibility(View.GONE);
                 signalsChartView.setVisibility(View.VISIBLE);
                 startSignalsRefresh(signalsBarAdapter);
@@ -260,11 +196,6 @@ public class fragEnlaces extends Fragment {
 
     @Override
     public void onDestroyView() {
-        cancelQuery();
-        if (queryRefresh != null) {
-            queryHandler.removeCallbacks(queryRefresh);
-            queryRefresh = null;
-        }
         if (signalsRefreshRunnable != null) {
             signalsRefreshHandler.removeCallbacks(signalsRefreshRunnable);
             signalsRefreshRunnable = null;
