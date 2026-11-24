@@ -90,7 +90,7 @@ public class UMProtocol extends GNSSProtocol {
     byte[] cmd_hotstart() {  return "reset position\r\n".getBytes(); } //OJO esto realmente está hciendo un reboot en ambos modelos
     @Override
     byte[] cmd_rawlog(boolean on) {
-        String prefix = "UNLOG com3\n";
+        String prefix = "UNLOG com3\r\n";
         String cmd;
         if(!on)
             cmd = activateCmds;

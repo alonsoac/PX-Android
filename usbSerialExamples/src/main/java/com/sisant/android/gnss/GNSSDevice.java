@@ -561,6 +561,7 @@ public class GNSSDevice {
         if (this.MAC.equalsIgnoreCase("00:14:03:05:59:5A")) return CMD_TYPE_UM; //base RC7
         if (this.MAC.equalsIgnoreCase("00:14:03:05:0A:6B") || this.MAC.equalsIgnoreCase("00:14:03:05:0A:BA")) return CMD_TYPE_UM; //GA2
         if (this.MAC.equals("00:14:03:05:0A:3A")) return CMD_TYPE_UM; //rover Mc5
+        if (this.MAC.equals("00:14:03:05:0A:6C")) return CMD_TYPE_UM; //rover ad8
 
 
 
@@ -661,8 +662,15 @@ public class GNSSDevice {
         //MC5
         if(this.name.contains("MC5")) {
             if (this.MAC.equals("00:14:03:05:0A:52") || this.MAC.equals("00:14:03:05:0A:3A"))
-              (calendar = Calendar.getInstance()).set(2026, oct, 16, 0, 0, 0);
+              (calendar = Calendar.getInstance()).set(2026, dic, 16, 0, 0, 0);
         }
+
+
+
+        //adelky
+        if (this.MAC.equals("00:14:03:05:0A:6C"))
+              (calendar = Calendar.getInstance()).set(2026, dic, 16, 0, 0, 0);
+
 
 
 
